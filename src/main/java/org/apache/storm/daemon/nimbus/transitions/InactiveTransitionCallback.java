@@ -15,18 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.stats;
+package org.apache.storm.daemon.nimbus.transitions;
 
-import java.io.Serializable;
+import backtype.storm.ClojureClass;
 
-import org.apache.storm.ClojureClass;
+import com.tencent.jstorm.cluster.StormStatus;
+import com.tencent.jstorm.utils.thread.BaseCallback;
 
-@ClojureClass(className = "backtype.storm.stats#CommonStats")
-public class CommonStats implements Serializable {
-  private static final long serialVersionUID = 1L;
-  private Integer rate;
+@ClojureClass(className = "backtype.storm.daemon.nimbus#state-transitions#inactive")
+public class InactiveTransitionCallback extends BaseCallback {
 
-  public Integer getRate() {
-    return rate;
+  @Override
+  public <T> Object execute(T... args) {
+
+    return new StormStatus(StatusType.inactive);
   }
+
 }

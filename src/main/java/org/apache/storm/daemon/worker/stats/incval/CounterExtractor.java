@@ -15,19 +15,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.worker.executor;
+package org.apache.storm.daemon.worker.stats.incval;
 
-import org.apache.storm.daemon.common.DaemonCommon;
+import java.util.HashMap;
+import java.util.Map;
 
-import backtype.storm.daemon.Shutdownable;
+import org.apache.storm.ClojureClass;
+import org.apache.storm.util.thread.RunnableCallback;
 
-/**
- * 
- * @author <a href="mailto:caofangkun@gmail.com">caokun</a>
- * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
- * 
- */
-public interface ShutdownableDameon extends Shutdownable, DaemonCommon,
-    Runnable {
+@ClojureClass(className = "backtype.storm.stats#counter-extract")
+public class CounterExtractor extends RunnableCallback {
 
+  private static final long serialVersionUID = 1L;
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public <T> Object execute(T... args) {
+    Map<Object, Long> v = null;
+
+    if (args != null && args.length > 0) {
+      v = (Map<Object, Long>) args[0];
+    }
+
+    if (v == null) {
+      v = new HashMap<Object, Long>();
+    }
+    return v;
+  }
 }

@@ -1,0 +1,126 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.storm.daemon.supervisor;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import backtype.storm.ClojureClass;
+import backtype.storm.Config;
+import backtype.storm.scheduler.ISupervisor;
+import backtype.storm.utils.LocalState;
+import clojure.lang.Atom;
+
+import com.tencent.jstorm.daemon.common.Common;
+import com.tencent.jstorm.utils.NetWorkUtils;
+
+@ClojureClass(className = "backtype.storm.daemon.supervisor#standalone-supervisor")
+public class StandaloneSupervisor implements ISupervisor {
+  private static final Logger LOG = LoggerFactory
+      .getLogger(StandaloneSupervisor.class);
+
+  private clojure.lang.Atom confAtom;
+  private clojure.lang.Atom idAtom;
+  private LocalState localState;
+
+  public StandaloneSupervisor() {
+    this.confAtom = new Atom(null);
+    this.idAtom = new Atom(null);
+  }
+
+  @SuppressWarnings("rawtypes")
+  @Override
+  public void prepare(Map conf, String localDir) {
+    try {
+      confAtom.reset(conf);
+      localState = new LocalState(localDir);
+      String currId = (String) localState.get(Common.LS_ID);
+      if (currId == null) {
+        currId = SupervisorUtils.generateSupervisorId();
+      }
+      localState.put(Common.LS_ID, currId);
+      idAtom.reset(currId);
+    } catch (IOException e) {
+      LOG.error(e.getMessage(), e);
+    }
+  }
+
+  @Override
+  public String getSupervisorId() {
+    return (String) idAtom.deref();
+  }
+
+  @Override
+  public String getAssignmentId() {
+    return (String) idAtom.deref();
+  }
+
+  @SuppressWarnings({ "rawtypes", "unchecked" })
+  @Override
+  public Object getMetadata() {
+    Map conf = (Map) confAtom.deref();
+    Set<Integer> ports = new HashSet<Integer>();
+    try {
+      ports = (Set<Integer>) localState.get(Common.LS_SLOTS);
+      if (null == ports || ports.isEmpty()) {
+        ports = new HashSet<Integer>();
+        List<Integer> portList =
+            (List<Integer>) conf.get(Config.SUPERVISOR_SLOTS_PORTS);
+        for (Integer svPort : portList) {
+          if (svPort < 0) {
+            try {
+              svPort = NetWorkUtils.assignServerPort(svPort);
+            } catch (IOException e) {
+              LOG.error("Error while getting new port: ", e.getMessage());
+              throw new IOException(e);
+            }
+          }
+          ports.add(svPort);
+        }
+      }
+      localState.put(Common.LS_SLOTS, ports);
+    } catch (IOException e1) {
+      LOG.error("Error while getting new port: ", e1.getMessage());
+      e1.printStackTrace();
+    }
+    return ports;
+  }
+
+  @Override
+  public boolean confirmAssigned(int port) {
+    return true;
+  }
+
+  @Override
+  public void killedWorker(int port) {
+
+  }
+
+  @Override
+  public void assigned(Collection<Integer> ports) {
+
+  }
+
+}

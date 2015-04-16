@@ -15,19 +15,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.worker.executor;
+package org.apache.storm.daemon.worker.stats.rolling;
 
-import org.apache.storm.daemon.common.DaemonCommon;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 
-import backtype.storm.daemon.Shutdownable;
+public class UpdateParams {
+  private Object[] args;
+  private Object curr;
 
-/**
- * 
- * @author <a href="mailto:caofangkun@gmail.com">caokun</a>
- * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
- * 
- */
-public interface ShutdownableDameon extends Shutdownable, DaemonCommon,
-    Runnable {
+  public Object[] getArgs() {
+    return args;
+  }
+
+  public void setArgs(Object[] args) {
+    this.args = args;
+  }
+
+  public Object getCurr() {
+    return curr;
+  }
+
+  public void setCurr(Object curr) {
+    this.curr = curr;
+  }
+
+  @Override
+  public String toString() {
+    return ToStringBuilder.reflectionToString(this,
+        ToStringStyle.SHORT_PREFIX_STYLE);
+  }
 
 }

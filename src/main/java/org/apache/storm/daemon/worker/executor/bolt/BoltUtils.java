@@ -17,10 +17,10 @@
  */
 package org.apache.storm.daemon.worker.executor.bolt;
 
-import backtype.storm.ClojureClass;
-import backtype.storm.tuple.TupleImpl;
+import org.apache.storm.ClojureClass;
+import org.apache.storm.util.CoreUtil;
 
-import com.tencent.jstorm.utils.ServerUtils;
+import backtype.storm.tuple.TupleImpl;
 
 /**
  * 
@@ -35,7 +35,7 @@ public class BoltUtils {
   public static Long tupleTimeDelta(TupleImpl tuple) {
     Long ms = tuple.getProcessSampleStartTime();
     if (ms != null) {
-      return ServerUtils.time_delta_ms(ms);
+      return CoreUtil.time_delta_ms(ms);
     } else {
       return null;
     }
@@ -45,7 +45,7 @@ public class BoltUtils {
   public static Long tupleExecuteTimeDelta(TupleImpl tuple) {
     Long ms = tuple.getExecuteSampleStartTime();
     if (ms != null) {
-      return ServerUtils.time_delta_ms(ms);
+      return CoreUtil.time_delta_ms(ms);
     } else {
       return null;
     }

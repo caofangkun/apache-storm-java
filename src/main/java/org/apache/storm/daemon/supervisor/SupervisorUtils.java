@@ -1,0 +1,837 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.storm.daemon.supervisor;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.thrift.TException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import backtype.storm.ClojureClass;
+import backtype.storm.Config;
+import backtype.storm.generated.AuthorizationException;
+import backtype.storm.generated.ExecutorInfo;
+import backtype.storm.scheduler.WorkerSlot;
+import backtype.storm.utils.LocalState;
+import backtype.storm.utils.Utils;
+
+import com.tencent.jstorm.cluster.StormClusterState;
+import com.tencent.jstorm.config.ConfigUtils;
+import com.tencent.jstorm.daemon.common.Assignment;
+import com.tencent.jstorm.daemon.common.Common;
+import com.tencent.jstorm.daemon.worker.Worker;
+import com.tencent.jstorm.daemon.worker.WorkerShutdown;
+import com.tencent.jstorm.daemon.worker.WorkerStatus;
+import com.tencent.jstorm.daemon.worker.heartbeat.WorkerLocalHeartbeat;
+import com.tencent.jstorm.psim.ProcessSimulator;
+import com.tencent.jstorm.utils.ServerUtils;
+import com.tencent.jstorm.utils.thread.RunnableCallback;
+
+public class SupervisorUtils {
+  private static final Logger LOG = LoggerFactory
+      .getLogger(SupervisorUtils.class);
+
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#assignments-snapshot")
+  public static Map<String, Assignment> assignmentsSnapshot(
+      StormClusterState stormClusterState, RunnableCallback callback,
+      Map<String, Assignment> assignmentVersions) throws Exception {
+
+    Set<String> stormIds = stormClusterState.assignments(callback);
+
+    Map<String, Assignment> newAssignments = new HashMap<String, Assignment>();
+    if (stormIds == null) {
+      return newAssignments;
+    }
+    for (String sid : stormIds) {
+      Assignment recordedAssignment = assignmentVersions.get(sid);
+      if (recordedAssignment != null) {
+        int recordedVersion = recordedAssignment.getVersion();
+        int assignmentVersion =
+            stormClusterState.assignmentVersion(sid, callback);
+        if (assignmentVersion == recordedVersion) {
+          newAssignments.put(sid, recordedAssignment);
+        } else {
+          Assignment newAssignment =
+              stormClusterState.assignmentInfoWithVersion(sid, callback);
+          newAssignments.put(sid, newAssignment);
+        }
+      } else {
+        Assignment newAssignment =
+            stormClusterState.assignmentInfoWithVersion(sid, callback);
+        newAssignments.put(sid, newAssignment);
+      }
+    }
+    return newAssignments;
+  }
+
+  /**
+   * 
+   * @param assignmentsSnapshot
+   * @param stormId
+   * @param assignmentId
+   * @return worker-port ---> LocalAssignment
+   */
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#read-my-executors")
+  private static Map<Integer, LocalAssignment> readMyExecutors(
+      Map<String, Assignment> assignmentsSnapshot, String stormId,
+      String assignmentId) {
+    Map<Integer, LocalAssignment> portToLocalAssignment =
+        new HashMap<Integer, LocalAssignment>();
+
+    Assignment assignment = assignmentsSnapshot.get(stormId);
+    Map<ExecutorInfo, WorkerSlot> executorToNodePort =
+        assignment.getExecutorToNodeport();
+    if (executorToNodePort == null) {
+      LOG.warn("No taskToWorkerSlot of assignement's " + assignment);
+      return portToLocalAssignment;
+    }
+    Set<Map.Entry<ExecutorInfo, WorkerSlot>> entries =
+        executorToNodePort.entrySet();
+    for (Map.Entry<ExecutorInfo, WorkerSlot> entry : entries) {
+      ExecutorInfo executor = entry.getKey();
+      WorkerSlot nodePort = entry.getValue();
+      Integer port = nodePort.getPort();
+      String node = nodePort.getNodeId();
+      if (!assignmentId.equals(node)) {
+        // not localhost
+        continue;
+      }
+      if (portToLocalAssignment.containsKey(port)) {
+        LocalAssignment la = portToLocalAssignment.get(port);
+        Set<ExecutorInfo> taskIds = la.getExecutors();
+        taskIds.add(executor);
+      } else {
+        Set<ExecutorInfo> taskIds = new HashSet<ExecutorInfo>();
+        taskIds.add(executor);
+        LocalAssignment la = new LocalAssignment(stormId, taskIds);
+        portToLocalAssignment.put(port, la);
+      }
+    }
+    return portToLocalAssignment;
+  }
+
+  /**
+   * 
+   * @param assignmentsSnapshot
+   * @param assignmentId
+   * @return Returns map from port to struct containing :storm-id and :executors
+   */
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#read-assignments")
+  public static Map<Integer, LocalAssignment> readAssignments(
+      Map<String, Assignment> assignmentsSnapshot, String assignmentId) {
+    Map<Integer, LocalAssignment> result =
+        new HashMap<Integer, LocalAssignment>();
+    for (String sid : assignmentsSnapshot.keySet()) {
+      Map<Integer, LocalAssignment> myExecutors =
+          readMyExecutors(assignmentsSnapshot, sid, assignmentId);
+      for (Map.Entry<Integer, LocalAssignment> entry : myExecutors.entrySet()) {
+        Integer port = entry.getKey();
+        LocalAssignment la = entry.getValue();
+        if (result.containsKey(port)) {
+          throw new RuntimeException(
+              "Should not have multiple topologies assigned to one port");
+        } else {
+          result.put(port, la);
+        }
+      }
+    }
+    return result;
+  }
+
+  /**
+   * 
+   * @param assignmentsSnapshot
+   * @param assignmentId
+   * @param existingAssignment
+   * @param retries
+   * @return Returns map from port to struct containing :storm-id and :executors
+   */
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#read-assignments")
+  public static Map<Integer, LocalAssignment> readAssignments(
+      Map<String, Assignment> assignmentsSnapshot, String assignmentId,
+      Map<Integer, LocalAssignment> existingAssignment, AtomicInteger retries) {
+
+    try {
+      Map<Integer, LocalAssignment> assignments =
+          readAssignments(assignmentsSnapshot, assignmentId);
+      retries.set(0);
+      return assignments;
+    } catch (RuntimeException e) {
+      if (retries.get() > 2) {
+        throw e;
+      } else {
+        retries.addAndGet(1);
+      }
+      LOG.warn(e.getMessage() + ": retrying " + retries + " of 3");
+      return existingAssignment;
+    }
+  }
+
+  /**
+   * 
+   * @param assignmentsSnapshot
+   * @return stormId --> stormCodeLocation
+   */
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#read-storm-code-locations")
+  public static Map<String, String> readStormCodeLocations(
+      Map<String, Assignment> assignmentsSnapshot) {
+    Map<String, String> result = new HashMap<String, String>();
+    for (Map.Entry<String, Assignment> entry : assignmentsSnapshot.entrySet()) {
+      String stormId = entry.getKey();
+      Assignment assignment = entry.getValue();
+      result.put(stormId, assignment.getMasterCodeDir());
+    }
+    return result;
+  }
+
+  @SuppressWarnings("rawtypes")
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#read-downloaded-storm-ids")
+  public static Set<String> readDownloadedStormIds(Map conf) throws IOException {
+    String path = ConfigUtils.supervisorStormdistRoot(conf);
+    Set<String> result = new HashSet<String>();
+    for (String stormId : ServerUtils.readDirContents(path)) {
+      result.add(ServerUtils.urlDecode(stormId));
+    }
+    return result;
+  }
+
+  @SuppressWarnings("rawtypes")
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#read-worker-heartbeat")
+  public static WorkerLocalHeartbeat readWorkerHeartbeat(Map conf,
+      String workerId) {
+    WorkerLocalHeartbeat ret = null;
+    try {
+      LocalState localState = ConfigUtils.workerState(conf, workerId);
+      ret = (WorkerLocalHeartbeat) localState.get(Common.LS_WORKER_HEARTBEAT);
+    } catch (IOException e) {
+      LOG.warn("Failed to read local heartbeat for workerId : " + workerId
+          + ",Ignoring exception." + ServerUtils.stringifyError(e));
+    }
+    return ret;
+  }
+
+  @SuppressWarnings("rawtypes")
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#my-worker-ids")
+  public static Set<String> myWorkerIds(Map conf) {
+    String path;
+    try {
+      path = ConfigUtils.workerRoot(conf);
+    } catch (IOException e1) {
+      LOG.error("Failed to get Local worker dir", e1);
+      return new HashSet<String>();
+    }
+    return ServerUtils.readDirContents(path);
+  }
+
+  /**
+   * 
+   * @param conf
+   * @return Returns map from worker id to heartbeat
+   * @throws IOException
+   */
+  @SuppressWarnings("rawtypes")
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#read-worker-heartbeats")
+  public static Map<String, WorkerLocalHeartbeat> readWorkerHeartbeats(Map conf)
+      throws IOException {
+    Map<String, WorkerLocalHeartbeat> workerHeartbeats =
+        new HashMap<String, WorkerLocalHeartbeat>();
+    Set<String> workerIds = myWorkerIds(conf);
+    if (workerIds == null) {
+      return workerHeartbeats;
+    }
+    for (String workerId : workerIds) {
+      WorkerLocalHeartbeat whb = readWorkerHeartbeat(conf, workerId);
+      workerHeartbeats.put(workerId, whb);
+    }
+    return workerHeartbeats;
+  }
+
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#matches-an-assignment?")
+  public static boolean matchesAnAssignment(
+      WorkerLocalHeartbeat workerHeartbeat,
+      Map<Integer, LocalAssignment> assignedExecutors) {
+    boolean isMatch = true;
+    LocalAssignment localAssignment =
+        assignedExecutors.get(workerHeartbeat.getPort());
+    if (localAssignment == null) {
+      isMatch = false;
+    } else if (!workerHeartbeat.getStormId().equals(
+        localAssignment.getStormId())) {
+      // topology id not equal
+      LOG.info("topology id not equal whb={} ,localAssignment={} ",
+          workerHeartbeat.getStormId(), localAssignment.getStormId());
+      isMatch = false;
+    } else if (!(workerHeartbeat.getTaskIds().equals(localAssignment
+        .getExecutors()))) {
+      // task-id isn't equal
+      LOG.info("task-id isn't equal whb={} ,localAssignment={}",
+          workerHeartbeat.getTaskIds(), localAssignment.getExecutors());
+      isMatch = false;
+    }
+    return isMatch;
+  }
+
+  @SuppressWarnings("rawtypes")
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#download-storm-code")
+  public static void downloadStormCode(Map conf, String stormId,
+      String masterCodeDir, Object downloadLock) throws IOException,
+      TException, AuthorizationException {
+    boolean isDistributeMode = ConfigUtils.isDistributedMode(conf);
+    if (isDistributeMode) {
+      downloadDistributeStormCode(conf, stormId, masterCodeDir, downloadLock);
+    } else {
+      downloadLocalStormCode(conf, stormId, masterCodeDir, downloadLock);
+    }
+  }
+
+  @SuppressWarnings({ "rawtypes" })
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#download-storm-code#distribute")
+  public static void downloadDistributeStormCode(Map conf, String stormId,
+      String masterCodeDir, Object downloadLock) throws IOException,
+      TException, AuthorizationException {
+    // STORM_LOCAL_DIR/supervisor/tmp/(UUID)
+    synchronized (downloadLock) {
+      String tmproot =
+          ConfigUtils.supervisorTmpDir(conf) + "/"
+              + UUID.randomUUID().toString();
+      String stormroot = ConfigUtils.supervisorStormdistRoot(conf, stormId);
+      FileUtils.forceMkdir(new File(tmproot));
+
+      String masterStormjarPath = ConfigUtils.masterStormjarPath(masterCodeDir);
+      String supervisorStormJarPath =
+          ConfigUtils.supervisorStormjarPath(tmproot);
+      Utils
+          .downloadFromMaster(conf, masterStormjarPath, supervisorStormJarPath);
+
+      String masterStormcodePath =
+          ConfigUtils.masterStormcodePath(masterCodeDir);
+      String supervisorStormcodePath =
+          ConfigUtils.supervisorStormcodePath(tmproot);
+      Utils.downloadFromMaster(conf, masterStormcodePath,
+          supervisorStormcodePath);
+
+      String masterStormConfPath =
+          ConfigUtils.masterStormconfPath(masterCodeDir);
+      String supervisorStormconfPath =
+          ConfigUtils.supervisorStormconfPath(tmproot);
+      Utils.downloadFromMaster(conf, masterStormConfPath,
+          supervisorStormconfPath);
+
+      ServerUtils.extractDirFromJar(supervisorStormJarPath,
+          ConfigUtils.RESOURCES_SUBDIR, tmproot);
+      FileUtils.moveDirectory(new File(tmproot), new File(stormroot));
+    }
+  }
+
+  @SuppressWarnings("rawtypes")
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#download-storm-code#local")
+  public static void downloadLocalStormCode(Map conf, String stormId,
+      String masterCodeDir, Object downloadLock) throws IOException, TException {
+    String stormroot = ConfigUtils.supervisorStormdistRoot(conf, stormId);
+
+    synchronized (downloadLock) {
+      FileUtils.copyDirectory(new File(masterCodeDir), new File(stormroot));
+
+      ClassLoader classloader = Thread.currentThread().getContextClassLoader();
+      String resourcesJar = resourcesJar();
+      URL url = classloader.getResource(ConfigUtils.RESOURCES_SUBDIR);
+      String targetDir =
+          stormroot + ServerUtils.filePathSeparator()
+              + ConfigUtils.RESOURCES_SUBDIR;
+      if (resourcesJar != null) {
+        LOG.info("Extracting resources from jar at " + resourcesJar + " to "
+            + targetDir);
+        ServerUtils.extractDirFromJar(resourcesJar,
+            ConfigUtils.RESOURCES_SUBDIR, stormroot);
+      } else if (url != null) {
+        LOG.info("Copying resources at " + url.toString() + " to " + targetDir);
+        FileUtils.copyDirectory(new File(url.getFile()), (new File(targetDir)));
+      }
+    }
+  }
+
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#resources-jar")
+  private static String resourcesJar() {
+    String path = ServerUtils.currentClasspath();
+    if (path == null) {
+      return null;
+    }
+    String[] paths = path.split(File.pathSeparator);
+    List<String> jarPaths = new ArrayList<String>();
+    for (String s : paths) {
+      if (s.endsWith(".jar")) {
+        jarPaths.add(s);
+      }
+    }
+
+    List<String> rtn = new ArrayList<String>();
+    int size = jarPaths.size();
+    for (int i = 0; i < size; i++) {
+      if (ServerUtils.zipContainsDir(jarPaths.get(i),
+          ConfigUtils.RESOURCES_SUBDIR)) {
+        rtn.add(jarPaths.get(i));
+      }
+    }
+    if (rtn.size() == 0)
+      return null;
+    return rtn.get(0);
+  }
+
+  @SuppressWarnings({ "rawtypes", "unchecked" })
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#launch-worker")
+  public static void launchWorker(Map conf, SupervisorData supervisor,
+      String stormId, Integer port, String workerId) throws Exception {
+    if (ConfigUtils.isLocalMode(conf)) {
+      launchLocalWorker(supervisor, stormId, port, workerId);
+    } else {
+      launchDistributedWorker(supervisor, stormId, port, workerId);
+    }
+  }
+
+  @SuppressWarnings("rawtypes")
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#launch-worker#local")
+  private static void launchLocalWorker(SupervisorData supervisor,
+      String stormId, Integer port, String workerId) throws Exception {
+    Map conf = supervisor.getConf();
+    String pid = ServerUtils.uuid();
+    WorkerShutdown worker =
+        Worker.mkWorker(conf, supervisor.getSharedContext(), stormId,
+            supervisor.getAssignmentId(), port, workerId);
+    ProcessSimulator.registerProcess(pid, worker);
+    supervisor.getWorkerThreadPids().put(workerId, pid);
+  }
+
+  @SuppressWarnings({ "rawtypes", "unchecked" })
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#launch-worker#distributed")
+  private static void launchDistributedWorker(SupervisorData supervisor,
+      String stormId, Integer port, String workerId) throws IOException {
+    Map conf = supervisor.getConf();
+    String stormLocalHostname =
+        ServerUtils.parseString(conf.get(Config.STORM_LOCAL_HOSTNAME),
+            "localhost");
+    String stormhome = System.getProperty("storm.home");
+    String stormOptions = System.getProperty("storm.options");
+    String stormLogDir =
+        ServerUtils.parseString(System.getProperty("storm.log.dir"), stormhome
+            + ServerUtils.filePathSeparator() + "logs");
+    String stormroot = ConfigUtils.supervisorStormdistRoot(conf, stormId);
+    String jlp = jlp(stormroot, conf);
+    String stormjar = ConfigUtils.supervisorStormjarPath(stormroot);
+    Map stormConf = ConfigUtils.readSupervisorStormConf(conf, stormId);
+
+    String classPath =
+        ServerUtils.addToClasspath(ServerUtils.currentClasspath(),
+            new String[] { stormjar });
+    String[] topoClasspath = null;
+    String topologyClassPath =
+        ServerUtils.parseString(stormConf.get(Config.TOPOLOGY_CLASSPATH), null);
+    if (null != topologyClassPath) {
+      topoClasspath = new String[] { topologyClassPath };
+      classPath =
+          ServerUtils.addToClasspath(ServerUtils.currentClasspath(),
+              topoClasspath);
+    }
+
+    // worker-childopts
+    String workerChildopts = " ";
+    String s = (String) conf.get(Config.WORKER_CHILDOPTS);
+    if (s != null) {
+      workerChildopts += substituteChildopts(s, workerId, stormId, port);
+    }
+
+    // topo-worker-childopts
+    String topoWorkerChildopts = " ";
+    s = (String) conf.get(Config.TOPOLOGY_WORKER_CHILDOPTS);
+    if (s != null) {
+      topoWorkerChildopts += substituteChildopts(s, workerId, stormId, port);
+    }
+
+    // worker-gc-childopts
+    String workerGcChildopts = " ";
+    s = (String) conf.get(Config.WORKER_GC_CHILDOPTS);
+    if (s != null) {
+      workerGcChildopts += substituteChildopts(s, workerId, stormId, port);
+    }
+
+    // topology-worker-environment
+    Map<String, String> topologyWorkerEnvironment =
+        new HashMap<String, String>();
+    Map<String, String> env =
+        (Map<String, String>) stormConf.get(Config.TOPOLOGY_ENVIRONMENT);
+    if (env != null) {
+      topologyWorkerEnvironment.putAll(env);
+    }
+    topologyWorkerEnvironment.put("LD_LIBRARY_PATH", jlp);
+
+    String user =
+        ServerUtils.parseString(stormConf.get(Config.TOPOLOGY_SUBMITTER_USER),
+            "");
+
+    String logfilename = "worker-" + port + ".log";
+
+    String stormConfDir = System.getProperty("storm.conf.dir");
+
+    StringBuilder commandSB = new StringBuilder();
+    commandSB.append(javaCmd());
+    commandSB.append(" -server ");
+    commandSB.append(workerChildopts);
+    commandSB.append(workerGcChildopts);
+    commandSB.append(topoWorkerChildopts);
+    commandSB.append(" -Djava.library.path=");
+    commandSB.append(jlp);
+    commandSB.append(" -Dlogfile.name=");
+    commandSB.append(logfilename);
+    commandSB.append(" -Dstorm.home=");
+    commandSB.append(stormhome);
+    commandSB.append(" -Dstorm.options=");
+    commandSB.append(stormOptions);
+    commandSB.append(" -Dstorm.log.file=");
+    commandSB.append(logfilename);
+    commandSB.append(" -Dstorm.log.dir=");
+    commandSB.append(stormLogDir);
+    if (stormConfDir != null) {
+      commandSB.append(" -Dlog4j.configuration=File:" + stormConfDir
+          + "/storm.log4j.properties ");
+      commandSB.append(" -Dstorm.conf.dir=");
+      commandSB.append(stormConfDir);
+    } else {
+      commandSB.append(" -Dlog4j.configuration=File:storm.log4j.properties");
+    }
+    commandSB.append(" -Dstorm.id=");
+    commandSB.append(stormId);
+    commandSB.append(" -Dstorm.local.hostname=");
+    commandSB.append(stormLocalHostname);
+    commandSB.append(" -Dworker.id=");
+    commandSB.append(workerId);
+    commandSB.append(" -Dworker.port=");
+    commandSB.append(port);
+    commandSB.append(" -cp ");
+    commandSB.append(classPath);
+    commandSB.append(" com.tencent.jstorm.daemon.worker.Worker ");
+    commandSB.append(stormId);
+    commandSB.append(" ");
+    commandSB.append(supervisor.getAssignmentId());
+    commandSB.append(" ");
+    commandSB.append(port);
+    commandSB.append(" ");
+    commandSB.append(workerId);
+    LOG.info("Launching worker with command: " + commandSB);
+    Process p = null;
+    try {
+      p =
+          ServerUtils.launchProcess(commandSB.toString(),
+              topologyWorkerEnvironment);
+    } finally {
+      if (p != null) {
+        IOUtils.closeQuietly(p.getOutputStream());
+        IOUtils.closeQuietly(p.getInputStream());
+        IOUtils.closeQuietly(p.getErrorStream());
+      }
+    }
+  }
+
+  @SuppressWarnings("rawtypes")
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#write-log-metadata-to-yaml-file!")
+  private static void writeLogMetadataToYamlFile(String stormId, Integer port,
+      Map<String, String> data, Map conf) {
+    // TODO
+
+  }
+
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#write-log-metadata!")
+  private static void writeLogMetadata(Map stormConf, String user,
+      String workerId, String stormId, Integer port, Map conf) {
+    List<String> logsGroups = (List<String>) stormConf.get(Config.LOGS_GROUPS);
+    List<String> topologyGroups =
+        (List<String>) stormConf.get(Config.TOPOLOGY_GROUPS);
+    Set<String> groups = new HashSet<String>(logsGroups);
+
+    Map<String, String> data = new HashMap<String, String>();
+    data.put(Config.TOPOLOGY_SUBMITTER_USER, user);
+    data.put("worker-id", workerId);
+    // TODO
+    data.put(Config.LOGS_GROUPS, user);
+    data.put(Config.LOGS_USERS, user);
+    writeLogMetadataToYamlFile(stormId, port, data, conf);
+  }
+
+  @SuppressWarnings("rawtypes")
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#jlp")
+  private static String jlp(String stormroot, Map conf) {
+    String resourceRoot =
+        stormroot + File.separator + ConfigUtils.RESOURCES_SUBDIR;
+    String os = System.getProperty("os.name").replaceAll("\\s+", "_");
+    String arch = System.getProperty("os.arch");
+    String javaLibraryPath = (String) conf.get(Config.JAVA_LIBRARY_PATH);
+    String archResourceRoot = resourceRoot + File.separator + os + "-" + arch;
+    return archResourceRoot + File.pathSeparator + resourceRoot
+        + File.pathSeparator + javaLibraryPath;
+  }
+
+  /**
+   * 
+   * @param value
+   * @param workerId
+   * @param topologyId
+   * @param port
+   * @return Generates runtime childopts by replacing keys with
+   *         topology-id,worker-id, port
+   */
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#substitute-childopts")
+  private static String substituteChildopts(String value, String workerId,
+      String topologyId, Integer port) {
+    if (value == null) {
+      return null;
+    }
+    return value.replaceAll("%ID%", port.toString())
+        .replaceAll("%WORKER-ID%", workerId)
+        .replaceAll("%TOPOLOGY-ID%", topologyId)
+        .replaceAll("%WORKER-PORT%", port.toString());
+  }
+
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#java-cmd")
+  private static String javaCmd() {
+    String javaHome = System.getenv("JAVA_HOME");
+    if (javaHome == null) {
+      return "java";
+    } else {
+      String filePathSeparator = ServerUtils.filePathSeparator();
+      return javaHome + filePathSeparator + "bin" + filePathSeparator + "java";
+    }
+  }
+
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  public static String getChildOpts(Map stormConf, Map conf) {
+    String childopts = " ";
+    conf.putAll(stormConf);
+    if ((String) conf.get(Config.WORKER_GC_CHILDOPTS) != null) {
+      childopts += (String) conf.get(Config.WORKER_GC_CHILDOPTS);
+    }
+    if ((String) conf.get(Config.WORKER_CHILDOPTS) != null) {
+      childopts += " " + (String) conf.get(Config.WORKER_CHILDOPTS);
+    }
+    if ((String) conf.get(Config.TOPOLOGY_WORKER_CHILDOPTS) != null) {
+      childopts += " " + (String) conf.get(Config.TOPOLOGY_WORKER_CHILDOPTS);
+    }
+    return childopts;
+  }
+
+  public static Set<String> deadWorkers = new HashSet<String>();
+
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#get-dead-workers")
+  public Set<String> getDeadWorkers() {
+    return deadWorkers;
+  }
+
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#add-dead-worker")
+  public void addDeadWorker(String workerId) {
+    deadWorkers.add(workerId);
+  }
+
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#remove-dead-worker")
+  public static void removeDeadWorker(String workerId) {
+    deadWorkers.remove(workerId);
+  }
+
+  @SuppressWarnings("rawtypes")
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#is-worker-hb-timed-out?")
+  public static boolean isWorkerHbTimedOut(int now, WorkerLocalHeartbeat hb,
+      Map conf) {
+    return ((now - hb.getTimeSecs()) > ServerUtils.parseInt(
+        conf.get(Config.SUPERVISOR_WORKER_TIMEOUT_SECS), 30));
+  }
+
+  public static boolean isWorkerProcessDied(String id) {
+    if (deadWorkers.contains(id)) {
+      LOG.info("Worker Process " + id + " has died!");
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * 
+   * @param supervisor
+   * @param assignedExecutors
+   * @param now
+   * @return Returns map from worker id to worker heartbeat. if the heartbeat is
+   *         nil, then the worker is dead (timed out or never wrote heartbeat
+   * @throws Exception
+   */
+  @SuppressWarnings("rawtypes")
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#read-allocated-workers")
+  public static Map<String, StateHeartbeat> readAllocatedWorkers(
+      SupervisorData supervisor,
+      Map<Integer, LocalAssignment> assignedExecutors, int now)
+      throws Exception {
+    Map conf = supervisor.getConf();
+    LocalState localState = supervisor.getLocalState();
+    Map<String, StateHeartbeat> workeridHbstate =
+        new HashMap<String, StateHeartbeat>();
+
+    Map<String, WorkerLocalHeartbeat> idToHeartbeat =
+        readWorkerHeartbeats(conf);
+    if (idToHeartbeat.size() == 0) {
+      LOG.info("No worker running now ...");
+      return workeridHbstate;
+    }
+
+    @SuppressWarnings("unchecked")
+    Map<String, Integer> workers =
+        (Map<String, Integer>) localState.get(Common.LS_APPROVED_WORKERS);
+
+    Set<String> approvedIds = new HashSet<String>();
+    if (workers != null) {
+      approvedIds = workers.keySet();
+    }
+
+    for (Map.Entry<String, WorkerLocalHeartbeat> entry : idToHeartbeat
+        .entrySet()) {
+      String id = entry.getKey();// workerid
+      WorkerLocalHeartbeat hb = entry.getValue();
+      WorkerStatus state = null;
+      if (hb == null) {
+        state = WorkerStatus.notStarted;
+      } else if (!approvedIds.contains(id)
+          || !matchesAnAssignment(hb, assignedExecutors)) {
+        state = WorkerStatus.disallowed;
+      } else if (hb.getProcessId() != null
+          && !ServerUtils.isProcessExists(hb.getProcessId())) {
+        state = WorkerStatus.processNotExists;
+      } else if (isWorkerProcessDied(id) || isWorkerHbTimedOut(now, hb, conf)) {
+        state = WorkerStatus.timedOut;
+      } else {
+        state = WorkerStatus.valid;
+      }
+      Object objs[] =
+          { id, state.toString(), hb == null ? "null" : hb.toString(),
+              String.valueOf(now) };
+      LOG.debug("Worker {} is {}: {} at supervisor time-secs {} ", objs);
+      workeridHbstate.put(id, new StateHeartbeat(state, hb));
+    }
+    return workeridHbstate;
+  }
+
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#assigned-storm-ids-from-port-assignments")
+  public static Set<String> assignedStormIdsFromPortAssignments(
+      Map<Integer, LocalAssignment> newAssignment) {
+    Set<String> assignedStormIds = new HashSet<String>();
+    for (LocalAssignment entry : newAssignment.values()) {
+      assignedStormIds.add(entry.getStormId());
+    }
+    return assignedStormIds;
+  }
+
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#generate-supervisor-id")
+  public static String generateSupervisorId() {
+    return ServerUtils.uuid();
+  }
+
+  @SuppressWarnings("rawtypes")
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#worker-launcher")
+  public static Process workerLauncher(Map conf, String user,
+      Map<String, String> environment) throws IOException {
+    if (user == null) {
+      throw new IllegalArgumentException(
+          "User cannot be blank when calling worker-launcher.");
+    }
+    String stormHome = System.getProperty("storm.home");
+    String wl =
+        ServerUtils.parseString(conf.get(Config.SUPERVISOR_WORKER_LAUNCHER),
+            stormHome + "/bin/worker-launcher");
+    String command = wl + " " + user;
+    return ServerUtils.launchProcess(command, environment);
+  }
+
+  @SuppressWarnings("rawtypes")
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#worker-launcher-and-wait")
+  public static void workerLauncherAndWait(Map conf, String user,
+      Map<String, String> environment) throws IOException {
+    Process process = null;
+    try {
+      process = workerLauncher(conf, user, environment);
+      process.waitFor();
+    } catch (InterruptedException e) {
+      LOG.info("interrupted.");
+    }
+    if (process != null) {
+      process.exitValue();
+    }
+  }
+
+  /**
+   * Launches a process owned by the given user that deletes the given path
+   * recursively. Throws RuntimeException if the directory is not removed.
+   * 
+   * @param conf
+   * @param id
+   * @param user
+   * @param path
+   * @throws IOException
+   */
+  @SuppressWarnings("rawtypes")
+  public static void rmrAsUser(Map conf, String id, String user, String path)
+      throws IOException {
+    Map<String, String> environment = new HashMap<String, String>();
+    environment.put("rmr", path);
+    workerLauncherAndWait(conf, user, environment);
+    if (ServerUtils.existsFile(path)) {
+      throw new RuntimeException(path + " was not deleted");
+    }
+  }
+
+  @SuppressWarnings("rawtypes")
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#try-cleanup-worker")
+  public static void tryCleanupWorker(Map conf, String id, String user) {
+    try {
+      String workerRoot = ConfigUtils.workerRoot(conf, id);
+      if (new File(workerRoot).exists()) {
+        boolean supervisorRunWorkerAsUser =
+            ServerUtils.parseBoolean(
+                conf.get(Config.SUPERVISOR_RUN_WORKER_AS_USER), false);
+        if (supervisorRunWorkerAsUser) {
+          rmrAsUser(conf, id, user, workerRoot);
+        } else {
+          ServerUtils.rmr(ConfigUtils.workerHeartbeatsRoot(conf, id));
+          // this avoids a race condition with worker or subprocess writing pid
+          // around same time
+          ServerUtils.rmpath(ConfigUtils.workerPidsRoot(conf, id));
+          ServerUtils.rmpath(ConfigUtils.workerRoot(conf, id));
+        }
+        ConfigUtils.removeWorkerUser(conf, id);
+        removeDeadWorker(id);
+      }
+    } catch (Exception e) {
+      LOG.warn("Failed to cleanup worker " + id + ". Will retry later. For "
+          + ServerUtils.stringifyError(e));
+    }
+  }
+}

@@ -15,19 +15,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.worker.executor;
+package org.apache.storm.timer;
 
-import org.apache.storm.daemon.common.DaemonCommon;
+import java.util.Comparator;
 
-import backtype.storm.daemon.Shutdownable;
+import org.apache.storm.ClojureClass;
 
 /**
  * 
  * @author <a href="mailto:caofangkun@gmail.com">caokun</a>
  * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
- * 
+ *
  */
-public interface ShutdownableDameon extends Shutdownable, DaemonCommon,
-    Runnable {
+@ClojureClass(className = "backtype.storm.timer#mk-timer#Comparator")
+public class CompareSecs implements Comparator<TimeObj> {
+
+  @Override
+  public int compare(TimeObj o1, TimeObj o2) {
+
+    return (int) (o1.getSecs() - o2.getSecs());
+  }
+
+  @Override
+  public boolean equals(Object o1) {
+    return true;
+  }
 
 }

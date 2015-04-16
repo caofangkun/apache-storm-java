@@ -26,10 +26,22 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import org.apache.storm.ClojureClass;
+import org.apache.storm.daemon.acker.AckerBolt;
+import org.apache.storm.daemon.worker.executor.ExecutorTransferFn;
+import org.apache.storm.daemon.worker.executor.error.ITaskReportErr;
+import org.apache.storm.daemon.worker.executor.task.TaskData;
+import org.apache.storm.daemon.worker.executor.task.TaskUtils;
+import org.apache.storm.daemon.worker.executor.task.TasksFn;
+import org.apache.storm.daemon.worker.executor.tuple.TuplePair;
+import org.apache.storm.daemon.worker.stats.BoltExecutorStats;
+import org.apache.storm.daemon.worker.stats.CommonStats;
+import org.apache.storm.daemon.worker.stats.Stats;
+import org.apache.storm.guava.collect.Lists;
+import org.apache.storm.util.CoreUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.ClojureClass;
 import backtype.storm.Config;
 import backtype.storm.hooks.info.BoltAckInfo;
 import backtype.storm.hooks.info.BoltFailInfo;
@@ -41,21 +53,7 @@ import backtype.storm.tuple.TupleImpl;
 import backtype.storm.utils.RotatingMap;
 import backtype.storm.utils.Utils;
 
-import com.google.common.collect.Lists;
 import com.lmax.disruptor.InsufficientCapacityException;
-import com.tencent.jstorm.counter.Counters;
-import com.tencent.jstorm.counter.TaskCounter;
-import com.tencent.jstorm.daemon.acker.AckerBolt;
-import com.tencent.jstorm.daemon.executor.ExecutorTransferFn;
-import com.tencent.jstorm.daemon.executor.error.ITaskReportErr;
-import com.tencent.jstorm.daemon.task.TaskData;
-import com.tencent.jstorm.daemon.task.TaskUtils;
-import com.tencent.jstorm.daemon.task.TasksFn;
-import com.tencent.jstorm.stats.BoltExecutorStats;
-import com.tencent.jstorm.stats.CommonStats;
-import com.tencent.jstorm.stats.Stats;
-import com.tencent.jstorm.tuple.TuplePair;
-import com.tencent.jstorm.utils.ServerUtils;
 
 /**
  * 
@@ -97,7 +95,7 @@ public class BoltOutputCollector implements IOutputCollector {
     this.overflowBuffer = overflowBuffer;
     this.executorStats = executorStats;
     this.isDebug =
-        ServerUtils.parseBoolean(stormConf.get(Config.TOPOLOGY_DEBUG), false);
+        CoreUtil.parseBoolean(stormConf.get(Config.TOPOLOGY_DEBUG), false);
   }
 
   @Override
@@ -137,7 +135,7 @@ public class BoltOutputCollector implements IOutputCollector {
       Long id = entry.getValue();
       try {
         TaskUtils.sendUnanchored(taskData, AckerBolt.ACKER_ACK_STREAM_ID,
-            Lists.newArrayList((Object) root, ServerUtils.bit_xor(id, ackVal)),
+            Lists.newArrayList((Object) root, CoreUtil.bit_xor(id, ackVal)),
             overflowBuffer);
       } catch (InsufficientCapacityException e) {
         // TODO Auto-generated catch block
@@ -225,7 +223,7 @@ public class BoltOutputCollector implements IOutputCollector {
   public static Long tupleTimeDelta(TupleImpl tuple) {
     Long ms = tuple.getProcessSampleStartTime();
     if (ms != null) {
-      return ServerUtils.time_delta_ms(ms);
+      return CoreUtil.time_delta_ms(ms);
     }
     return null;
   }
@@ -237,7 +235,7 @@ public class BoltOutputCollector implements IOutputCollector {
     if (curr == null) {
       curr = Long.valueOf(0);
     }
-    pending.put(key, ServerUtils.bit_xor(curr, id));
+    pending.put(key, CoreUtil.bit_xor(curr, id));
     // }
   }
 

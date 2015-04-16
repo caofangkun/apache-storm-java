@@ -15,19 +15,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.worker.executor;
+package org.apache.storm.daemon.supervisor;
 
-import org.apache.storm.daemon.common.DaemonCommon;
+import backtype.storm.ClojureClass;
 
-import backtype.storm.daemon.Shutdownable;
+import com.tencent.jstorm.daemon.worker.WorkerStatus;
+import com.tencent.jstorm.daemon.worker.heartbeat.WorkerLocalHeartbeat;
 
-/**
- * 
- * @author <a href="mailto:caofangkun@gmail.com">caokun</a>
- * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
- * 
- */
-public interface ShutdownableDameon extends Shutdownable, DaemonCommon,
-    Runnable {
+@ClojureClass(className = "backtype.storm.daemon.supervisor#read-allocated-workers:[state hb]")
+public class StateHeartbeat {
+  private WorkerStatus state;
+  private WorkerLocalHeartbeat hb;
+
+  public StateHeartbeat(WorkerStatus state, WorkerLocalHeartbeat hb) {
+    this.state = state;
+    this.hb = hb;
+  }
+
+  public WorkerStatus getState() {
+    return this.state;
+  }
+
+  public WorkerLocalHeartbeat getHeartbeat() {
+    return this.hb;
+  }
 
 }

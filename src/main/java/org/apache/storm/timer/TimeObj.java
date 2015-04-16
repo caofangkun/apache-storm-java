@@ -15,19 +15,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.worker.executor;
+package org.apache.storm.timer;
 
-import org.apache.storm.daemon.common.DaemonCommon;
-
-import backtype.storm.daemon.Shutdownable;
+import org.apache.storm.ClojureClass;
+import org.apache.storm.util.thread.RunnableCallback;
 
 /**
- * 
  * @author <a href="mailto:caofangkun@gmail.com">caokun</a>
  * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
- * 
  */
-public interface ShutdownableDameon extends Shutdownable, DaemonCommon,
-    Runnable {
+@ClojureClass(className = "backtype.storm.timer#schedule#queue")
+public class TimeObj {
+  private Long secs; // first
+  private RunnableCallback afn; // second
+  private String id;  // third
 
+  public TimeObj(Long secs, RunnableCallback afn, String id) {
+    this.secs = secs;
+    this.afn = afn;
+    this.id = id;
+  }
+
+  public Long getSecs() {
+    return secs;
+  }
+
+  public void setSecs(Long secs) {
+    this.secs = secs;
+  }
+
+  public RunnableCallback getAfn() {
+    return afn;
+  }
+
+  public void setAfn(RunnableCallback afn) {
+    this.afn = afn;
+  }
+
+  public String getId() {
+    return id;
+  }
+
+  public void setId(String id) {
+    this.id = id;
+  }
 }

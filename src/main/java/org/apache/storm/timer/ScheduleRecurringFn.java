@@ -1,3 +1,5 @@
+package org.apache.storm.timer;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -15,19 +17,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.worker.executor;
-
-import org.apache.storm.daemon.common.DaemonCommon;
-
-import backtype.storm.daemon.Shutdownable;
+import org.apache.storm.ClojureClass;
+import org.apache.storm.util.thread.RunnableCallback;
 
 /**
  * 
  * @author <a href="mailto:caofangkun@gmail.com">caokun</a>
  * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
- * 
+ *
  */
-public interface ShutdownableDameon extends Shutdownable, DaemonCommon,
-    Runnable {
+@ClojureClass(className = "backtype.storm.timer#schedule-recurring#fn")
+public class ScheduleRecurringFn extends RunnableCallback {
 
+  private static final long serialVersionUID = 1L;
+  private Timer timer;
+  private int recurSecs;
+  private RunnableCallback afn;
+
+  public ScheduleRecurringFn(Timer timer, int recurSecs, RunnableCallback afn) {
+    this.timer = timer;
+    this.recurSecs = recurSecs;
+    this.afn = afn;
+  }
+
+  @Override
+  public void run() {
+    afn.run();
+    // this avoids a race condition with cancel-timer
+    TimerUtil.schedule(timer, recurSecs, this, false);
+  }
 }

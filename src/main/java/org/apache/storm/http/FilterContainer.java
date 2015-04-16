@@ -15,19 +15,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.worker.executor;
+package org.apache.storm.http;
 
-import org.apache.storm.daemon.common.DaemonCommon;
-
-import backtype.storm.daemon.Shutdownable;
+import java.util.Map;
 
 /**
- * 
- * @author <a href="mailto:caofangkun@gmail.com">caokun</a>
- * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
- * 
+ * A container class for javax.servlet.Filter.
  */
-public interface ShutdownableDameon extends Shutdownable, DaemonCommon,
-    Runnable {
+public interface FilterContainer {
+  /**
+   * Add a filter to the container.
+   * 
+   * @param name Filter name
+   * @param classname Filter class name
+   * @param parameters a map from parameter names to initial values
+   */
+  void addFilter(String name, String classname, Map<String, String> parameters);
 
+  /**
+   * Add a global filter to the container.
+   * 
+   * @param name filter name
+   * @param classname filter class name
+   * @param parameters a map from parameter names to initial values
+   */
+  void addGlobalFilter(String name, String classname,
+      Map<String, String> parameters);
 }

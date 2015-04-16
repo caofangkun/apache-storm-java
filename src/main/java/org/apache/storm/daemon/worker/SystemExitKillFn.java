@@ -15,19 +15,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.worker.executor;
+package org.apache.storm.daemon.worker;
 
-import org.apache.storm.daemon.common.DaemonCommon;
+import org.apache.storm.util.CoreUtil;
+import org.apache.storm.util.thread.RunnableCallback;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import backtype.storm.daemon.Shutdownable;
+public class SystemExitKillFn extends RunnableCallback {
+  private static final long serialVersionUID = 1L;
+  private static final Logger LOG = LoggerFactory
+      .getLogger(SystemExitKillFn.class);
+  private String msg = "System Exit 1.";
 
-/**
- * 
- * @author <a href="mailto:caofangkun@gmail.com">caokun</a>
- * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
- * 
- */
-public interface ShutdownableDameon extends Shutdownable, DaemonCommon,
-    Runnable {
+  public SystemExitKillFn() {
 
+  }
+
+  public SystemExitKillFn(String msg) {
+    this.msg = msg;
+  }
+
+  @Override
+  public <T> Object execute(T... args) {
+    Exception e = (Exception) args[0];
+    LOG.error(msg + CoreUtil.stringifyError(e));
+    System.exit(1);
+    return e;
+  }
+
+  @Override
+  public void run() {
+    System.exit(1);
+  }
 }

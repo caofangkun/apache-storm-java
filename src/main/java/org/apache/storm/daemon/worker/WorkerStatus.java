@@ -15,19 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.worker.executor;
+package org.apache.storm.daemon.worker;
 
-import org.apache.storm.daemon.common.DaemonCommon;
+import org.apache.storm.ClojureClass;
 
-import backtype.storm.daemon.Shutdownable;
-
-/**
- * 
- * @author <a href="mailto:caofangkun@gmail.com">caokun</a>
- * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
- * 
- */
-public interface ShutdownableDameon extends Shutdownable, DaemonCommon,
-    Runnable {
-
+@ClojureClass(className = "backtype.storm.daemon.supervisor#read-allocated-workers#state")
+public enum WorkerStatus {
+  valid, disallowed, notStarted, timedOut, restarting, processNotExists;
 }

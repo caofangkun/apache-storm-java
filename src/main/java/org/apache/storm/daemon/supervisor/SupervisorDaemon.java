@@ -15,19 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.worker.executor;
+package org.apache.storm.daemon.supervisor;
 
-import org.apache.storm.daemon.common.DaemonCommon;
+import java.util.Map;
 
-import backtype.storm.daemon.Shutdownable;
+import backtype.storm.ClojureClass;
 
-/**
- * 
- * @author <a href="mailto:caofangkun@gmail.com">caokun</a>
- * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
- * 
- */
-public interface ShutdownableDameon extends Shutdownable, DaemonCommon,
-    Runnable {
+@ClojureClass(className = "backtype.storm.daemon.supervisor#SupervisorDaemon")
+public interface SupervisorDaemon {
+
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#SupervisorDaemon#get-id")
+  public String getId();
+
+  @SuppressWarnings("rawtypes")
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#SupervisorDaemon#get-conf")
+  public Map getConf();
+
+  @ClojureClass(className = "backtype.storm.daemon.supervisor#SupervisorDaemon#shutdown-all-workers")
+  public void shutdownAllWorkers();
 
 }

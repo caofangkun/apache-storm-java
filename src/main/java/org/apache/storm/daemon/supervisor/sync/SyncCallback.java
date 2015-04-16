@@ -15,19 +15,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.worker.executor;
+package org.apache.storm.daemon.supervisor.sync;
 
-import org.apache.storm.daemon.common.DaemonCommon;
+import org.apache.storm.ClojureClass;
+import org.apache.storm.daemon.supervisor.event.EventManager;
+import org.apache.storm.util.thread.RunnableCallback;
 
-import backtype.storm.daemon.Shutdownable;
+@ClojureClass(className = "backtype.storm.daemon.supervisor#mk-synchronize-supervisor#sync-callback")
+public class SyncCallback extends RunnableCallback {
 
-/**
- * 
- * @author <a href="mailto:caofangkun@gmail.com">caokun</a>
- * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
- * 
- */
-public interface ShutdownableDameon extends Shutdownable, DaemonCommon,
-    Runnable {
+  private static final long serialVersionUID = 1L;
+
+  private EventManager eventManager;
+
+  private RunnableCallback cb;
+
+  public SyncCallback(RunnableCallback cb, EventManager eventManager) {
+    this.eventManager = eventManager;
+    this.cb = cb;
+  }
+
+  @Override
+  public void run() {
+    eventManager.add(cb);
+  }
 
 }

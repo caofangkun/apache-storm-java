@@ -15,19 +15,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.worker.executor;
+package org.apache.storm.daemon.nimbus.threads;
 
-import org.apache.storm.daemon.common.DaemonCommon;
+import java.io.File;
+import java.io.FileFilter;
 
-import backtype.storm.daemon.Shutdownable;
+import org.apache.storm.ClojureClass;
 
-/**
- * 
- * @author <a href="mailto:caofangkun@gmail.com">caokun</a>
- * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
- * 
- */
-public interface ShutdownableDameon extends Shutdownable, DaemonCommon,
-    Runnable {
+@ClojureClass(className = "backtype.storm.daemon.nimbus#file-older-than?")
+public class OlderFileFilter implements FileFilter {
 
+  private int seconds;
+
+  public OlderFileFilter(int seconds) {
+    this.seconds = seconds;
+  }
+
+  /**
+   * Filter the older file, skip the files' modify time which is less sec than
+   * now
+   */
+  @Override
+  public boolean accept(File pathname) {
+    long current_time = System.currentTimeMillis();
+
+    return pathname.isFile()
+        && (pathname.lastModified() + seconds * 1000 <= current_time);
+  }
 }

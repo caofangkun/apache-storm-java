@@ -15,19 +15,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.worker.executor;
+package org.apache.storm.daemon.worker.stats;
 
-import org.apache.storm.daemon.common.DaemonCommon;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 
-import backtype.storm.daemon.Shutdownable;
+public class Pair<F, S> {
+  private F first;
+  private S second;
 
-/**
- * 
- * @author <a href="mailto:caofangkun@gmail.com">caokun</a>
- * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
- * 
- */
-public interface ShutdownableDameon extends Shutdownable, DaemonCommon,
-    Runnable {
+  public Pair(F first, S second) {
+    this.first = first;
+    this.second = second;
+  }
 
+  public F getFirst() {
+    return first;
+  }
+
+  public void setFirst(F first) {
+    this.first = first;
+  }
+
+  public S getSecond() {
+    return second;
+  }
+
+  public void setSecond(S second) {
+    this.second = second;
+  }
+
+  @Override
+  public String toString() {
+    return ToStringBuilder.reflectionToString(this,
+        ToStringStyle.SHORT_PREFIX_STYLE);
+  }
 }

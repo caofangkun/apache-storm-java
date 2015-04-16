@@ -15,19 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.worker.executor;
+package org.apache.storm.daemon.worker.messaging.zeroMq;
 
-import org.apache.storm.daemon.common.DaemonCommon;
+import org.zeromq.ZMQ.Context;
 
-import backtype.storm.daemon.Shutdownable;
+import backtype.storm.ClojureClass;
 
-/**
- * 
- * @author <a href="mailto:caofangkun@gmail.com">caokun</a>
- * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
- * 
- */
-public interface ShutdownableDameon extends Shutdownable, DaemonCommon,
-    Runnable {
-
+@ClojureClass(className = "backtype.storm.messaging.zmq#ZMQContextQuery")
+public interface ZMQContextQuery {
+  public Context zmqContext();
 }

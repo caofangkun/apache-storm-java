@@ -15,19 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.worker.executor;
+package org.apache.storm.daemon.nimbus.threads;
 
-import org.apache.storm.daemon.common.DaemonCommon;
+import org.apache.storm.ClojureClass;
+import org.apache.storm.daemon.nimbus.NimbusUtils;
 
-import backtype.storm.daemon.Shutdownable;
+@ClojureClass(className = "backtype.storm.daemon.nimbus#clean-inbox")
+public class CleanInboxRunnable implements Runnable {
+  private String dir_location;
+  private int seconds;
 
-/**
- * 
- * @author <a href="mailto:caofangkun@gmail.com">caokun</a>
- * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
- * 
- */
-public interface ShutdownableDameon extends Shutdownable, DaemonCommon,
-    Runnable {
+  public CleanInboxRunnable(String dir_location, int seconds) {
+    // Deletes jar files in dir older than seconds.
+    this.dir_location = dir_location;
+    this.seconds = seconds;
+  }
 
+  @Override
+  public void run() {
+    NimbusUtils.cleanInbox(dir_location, seconds);
+  }
 }

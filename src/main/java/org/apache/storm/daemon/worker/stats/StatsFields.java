@@ -15,19 +15,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.worker.executor;
+package org.apache.storm.daemon.worker.stats;
 
-import org.apache.storm.daemon.common.DaemonCommon;
+import org.apache.storm.ClojureClass;
 
-import backtype.storm.daemon.Shutdownable;
+@ClojureClass(className = "backtype.storm.stats#COMMON-FIELDS, SPOUT-FIELDS,BOLT-FIELDS")
+public enum StatsFields {
+  // common:0 bolt 1 spout 2 bolt&spout 3
 
-/**
- * 
- * @author <a href="mailto:caofangkun@gmail.com">caokun</a>
- * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
- * 
- */
-public interface ShutdownableDameon extends Shutdownable, DaemonCommon,
-    Runnable {
+  emitted(0), transferred(0), acked(3), failed(3), complete_latencies(2), process_latencies(
+      1), executed(1), execute_latencies(1);
+
+  private StatsFields(int flag) {
+    this.flag = flag;
+  }
+
+  private int flag;
+
+  public int getFlag() {
+    return flag;
+  }
 
 }

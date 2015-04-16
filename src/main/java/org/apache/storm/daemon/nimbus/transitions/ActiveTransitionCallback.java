@@ -15,19 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.worker.executor;
+package org.apache.storm.daemon.nimbus.transitions;
 
-import org.apache.storm.daemon.common.DaemonCommon;
+import backtype.storm.ClojureClass;
 
-import backtype.storm.daemon.Shutdownable;
+import com.tencent.jstorm.cluster.StormStatus;
+import com.tencent.jstorm.utils.thread.BaseCallback;
 
-/**
- * 
- * @author <a href="mailto:caofangkun@gmail.com">caokun</a>
- * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
- * 
- */
-public interface ShutdownableDameon extends Shutdownable, DaemonCommon,
-    Runnable {
+@ClojureClass(className = "backtype.storm.daemon.nimbus#state-transitions#active")
+public class ActiveTransitionCallback extends BaseCallback {
+
+  @Override
+  public <T> Object execute(T... args) {
+
+    return new StormStatus(StatusType.active);
+  }
 
 }

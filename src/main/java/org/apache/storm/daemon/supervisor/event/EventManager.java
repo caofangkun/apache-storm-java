@@ -15,19 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.worker.executor;
+package org.apache.storm.daemon.supervisor.event;
 
-import org.apache.storm.daemon.common.DaemonCommon;
+import java.io.Serializable;
 
-import backtype.storm.daemon.Shutdownable;
+import org.apache.storm.ClojureClass;
+import org.apache.storm.util.thread.RunnableCallback;
 
-/**
- * 
- * @author <a href="mailto:caofangkun@gmail.com">caokun</a>
- * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
- * 
- */
-public interface ShutdownableDameon extends Shutdownable, DaemonCommon,
-    Runnable {
+@ClojureClass(className = "backtype.storm.event#EventManager")
+public interface EventManager extends Serializable {
+  public void add(RunnableCallback eventFn);
 
+  public boolean waiting();
+
+  public void shutdown();
 }
