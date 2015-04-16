@@ -15,24 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.worker.executor;
+package org.apache.storm.daemon.worker.executor.grouping;
 
-/**
- * 
- * @author <a href="mailto:caofangkun@gmail.com">caokun</a>
- * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
- * 
- */
-public enum ExecutorType {
-  bolt("bolt"), spout("spout");
+import java.util.List;
 
-  private ExecutorType(String name) {
-    this.name = name;
-  }
+public interface IGrouper {
 
-  private String name;
-
-  public String getName() {
-    return name;
-  }
+  public List<Integer> fn(Integer taskId, List<Object> values);
 }

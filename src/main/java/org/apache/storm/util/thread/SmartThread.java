@@ -15,24 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.worker.executor;
+package org.apache.storm.util.thread;
 
-/**
- * 
- * @author <a href="mailto:caofangkun@gmail.com">caokun</a>
- * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
- * 
- */
-public enum ExecutorType {
-  bolt("bolt"), spout("spout");
+import org.apache.storm.ClojureClass;
 
-  private ExecutorType(String name) {
-    this.name = name;
-  }
+@ClojureClass(className = "backtype.storm.util#SmartThread")
+public interface SmartThread {
+  public void start();
 
-  private String name;
+  public void join() throws InterruptedException;;
 
-  public String getName() {
-    return name;
-  }
+  public void interrupt();
+
+  public Boolean isSleeping();
 }

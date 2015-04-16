@@ -23,16 +23,45 @@ package org.apache.storm.daemon.worker.executor;
  * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
  * 
  */
-public enum ExecutorType {
-  bolt("bolt"), spout("spout");
+public class ExecutorStatus {
+  // task is alive, and it will run BaseExecutor's run
+  public static final byte RUN = 0;
+  // task is alive, but it won't run BaseExecutor's run
+  public static final byte PAUSE = 1;
+  // task is shutdown
+  public static final byte SHUTDOWN = 2;
+  private byte status = ExecutorStatus.RUN;
 
-  private ExecutorType(String name) {
-    this.name = name;
+  public byte getStatus() {
+    return status;
   }
 
-  private String name;
+  public void setStatus(byte status) {
+    this.status = status;
+  }
 
-  public String getName() {
-    return name;
+  public boolean isRun() {
+    return status == ExecutorStatus.RUN;
+  }
+
+  public boolean isShutdown() {
+    return status == ExecutorStatus.SHUTDOWN;
+  }
+
+  public boolean isPause() {
+    return status == ExecutorStatus.PAUSE;
+  }
+
+  public String toString() {
+    if (isRun()) {
+      return "RUN";
+    }
+    if (isShutdown()) {
+      return "SHUTDOWN";
+    }
+    if (isPause()) {
+      return "PAUSE";
+    }
+    return "UNKNOWN";
   }
 }

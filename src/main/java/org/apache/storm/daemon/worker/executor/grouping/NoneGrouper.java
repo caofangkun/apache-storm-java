@@ -15,24 +15,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.worker.executor;
+package org.apache.storm.daemon.worker.executor.grouping;
 
-/**
- * 
- * @author <a href="mailto:caofangkun@gmail.com">caokun</a>
- * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
- * 
- */
-public enum ExecutorType {
-  bolt("bolt"), spout("spout");
+import java.util.List;
+import java.util.Random;
 
-  private ExecutorType(String name) {
-    this.name = name;
+import org.apache.storm.guava.collect.Lists;
+
+public class NoneGrouper implements IGrouper {
+  private Random random;
+  private List<Integer> targetTasks;
+  private int numTasks;
+
+  public NoneGrouper(List<Integer> targetTasks) {
+    this.random = new Random();
+    this.targetTasks = targetTasks;
+    this.numTasks = targetTasks.size();
   }
 
-  private String name;
-
-  public String getName() {
-    return name;
+  @Override
+  public List<Integer> fn(Integer taskId, List<Object> values) {
+    int rnd = random.nextInt();
+    if (rnd != Integer.MIN_VALUE) {
+      rnd = Math.abs(rnd);
+    } else {
+      rnd = Integer.MIN_VALUE;
+    }
+    int i = rnd % numTasks;
+    return Lists.newArrayList(targetTasks.get(i));
   }
+
 }

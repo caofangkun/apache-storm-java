@@ -17,22 +17,18 @@
  */
 package org.apache.storm.daemon.worker.executor;
 
+import backtype.storm.ClojureClass;
+import backtype.storm.generated.ExecutorInfo;
+
 /**
  * 
  * @author <a href="mailto:caofangkun@gmail.com">caokun</a>
  * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
  * 
  */
-public enum ExecutorType {
-  bolt("bolt"), spout("spout");
+@ClojureClass(className = "backtype.storm.daemon.executor#RunningExecutor")
+public abstract interface RunningExecutor {
+  public abstract ExecutorInfo get_executor_id();
 
-  private ExecutorType(String name) {
-    this.name = name;
-  }
-
-  private String name;
-
-  public String getName() {
-    return name;
-  }
+  public abstract Object render_stats();
 }

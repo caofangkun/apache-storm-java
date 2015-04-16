@@ -15,24 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.worker.executor;
+package org.apache.storm.util.thread;
 
-/**
- * 
- * @author <a href="mailto:caofangkun@gmail.com">caokun</a>
- * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
- * 
- */
-public enum ExecutorType {
-  bolt("bolt"), spout("spout");
+public class BaseCallback implements Callback {
 
-  private ExecutorType(String name) {
-    this.name = name;
+  @Override
+  public <T> Object execute(T... args) {
+    return null;
   }
 
-  private String name;
-
-  public String getName() {
-    return name;
-  }
 }

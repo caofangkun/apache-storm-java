@@ -17,22 +17,24 @@
  */
 package org.apache.storm.daemon.worker.executor;
 
+import com.tencent.jstorm.utils.ServerUtils;
+
 /**
+ * 
+ * Get how long task runs
  * 
  * @author <a href="mailto:caofangkun@gmail.com">caokun</a>
  * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
  * 
  */
-public enum ExecutorType {
-  bolt("bolt"), spout("spout");
+public class UptimeComputer {
+  int start_time = 0;
 
-  private ExecutorType(String name) {
-    this.name = name;
+  public UptimeComputer() {
+    start_time = ServerUtils.current_time_secs();
   }
 
-  private String name;
-
-  public String getName() {
-    return name;
+  public synchronized int uptime() {
+    return ServerUtils.timeDelta(start_time);
   }
 }

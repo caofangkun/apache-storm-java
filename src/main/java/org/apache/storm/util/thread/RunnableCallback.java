@@ -15,24 +15,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.worker.executor;
+package org.apache.storm.util.thread;
+
+import java.io.Serializable;
 
 /**
- * 
- * @author <a href="mailto:caofangkun@gmail.com">caokun</a>
- * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
+ * Base Runnable/Callback function
  * 
  */
-public enum ExecutorType {
-  bolt("bolt"), spout("spout");
+public class RunnableCallback implements Runnable, Callback, Serializable {
+  private static final long serialVersionUID = 1L;
 
-  private ExecutorType(String name) {
-    this.name = name;
+  @Override
+  public <T> Object execute(T... args) {
+    return null;
   }
 
-  private String name;
+  @Override
+  public void run() {
 
-  public String getName() {
-    return name;
   }
+
+  public Exception error() {
+    return null;
+  }
+
+  public Object getResult() {
+    return null;
+  }
+
+  public void shutdown() {
+  }
+
 }

@@ -15,18 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.worker.executor;
+package org.apache.storm.daemon.worker.executor.grouping;
 
-/**
- * 
- * @author <a href="mailto:caofangkun@gmail.com">caokun</a>
- * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
- * 
- */
-public enum ExecutorType {
-  bolt("bolt"), spout("spout");
+import org.apache.storm.ClojureClass;
 
-  private ExecutorType(String name) {
+@ClojureClass(className = "backtype.storm.daemon.executor#mk-grouper#")
+public enum GroupingType {
+  global("global"), fields("fields"), all("all"), shuffle("shuffle"), none(
+      "none"), custom_obj("custom-object"), custom_serialized(
+      "custom-serialized"), direct("direct"), local_or_shuffle(
+      "local-or-shuffle");
+
+  private GroupingType(String name) {
     this.name = name;
   }
 

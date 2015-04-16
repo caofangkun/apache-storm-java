@@ -17,22 +17,17 @@
  */
 package org.apache.storm.daemon.worker.executor;
 
+import backtype.storm.daemon.Shutdownable;
+
+import com.tencent.jstorm.daemon.common.DaemonCommon;
+
 /**
  * 
  * @author <a href="mailto:caofangkun@gmail.com">caokun</a>
  * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
  * 
  */
-public enum ExecutorType {
-  bolt("bolt"), spout("spout");
+public interface ShutdownableDameon extends Shutdownable, DaemonCommon,
+    Runnable {
 
-  private ExecutorType(String name) {
-    this.name = name;
-  }
-
-  private String name;
-
-  public String getName() {
-    return name;
-  }
 }
