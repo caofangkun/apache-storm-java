@@ -22,6 +22,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.storm.ClojureClass;
+import org.apache.storm.config.ConfigUtil;
+import org.apache.storm.counter.Counters;
+import org.apache.storm.counter.TaskCounter;
 import org.apache.storm.daemon.worker.executor.ExecutorData;
 import org.apache.storm.daemon.worker.executor.ExecutorStatus;
 import org.apache.storm.daemon.worker.executor.ExecutorUtils;
@@ -32,6 +35,7 @@ import org.apache.storm.daemon.worker.executor.tuple.TuplePair;
 import org.apache.storm.daemon.worker.stats.BoltExecutorStats;
 import org.apache.storm.daemon.worker.stats.CommonStats;
 import org.apache.storm.daemon.worker.stats.Stats;
+import org.apache.storm.util.CoreUtil;
 import org.apache.storm.util.EvenSampler;
 import org.apache.storm.util.thread.RunnableCallback;
 import org.slf4j.Logger;
@@ -88,7 +92,7 @@ public class BoltExecutor extends RunnableCallback implements
     this.receiveQueue = executorData.getReceiveQueue();
     this.deserializer = executorData.getDeserializer();
     this.componentId = executorData.getComponentId();
-    this.executeSampler = ConfigUtils.mkStatsSampler(stormConf);
+    this.executeSampler = ConfigUtil.mkStatsSampler(stormConf);
     this.sampler = executorData.getSampler();
     // the overflow buffer is used to ensure that bolts do not block when
     // emitting this ensures that the bolt can always clear the incoming
@@ -99,7 +103,7 @@ public class BoltExecutor extends RunnableCallback implements
     // gradually eventually running out of memory, but at least prevent
     // live-locks/deadlocks.
     boolean boltOutgoingOverflowBufferEnable =
-        ServerUtils.parseBoolean(stormConf
+        CoreUtil.parseBoolean(stormConf
             .get(Config.TOPOLOGY_BOLTS_OUTGOING_OVERFLOW_BUFFER_ENABLE), false);
     if (boltOutgoingOverflowBufferEnable) {
       this.overflowBuffer = new ConcurrentLinkedQueue<TuplePair>();
@@ -157,7 +161,7 @@ public class BoltExecutor extends RunnableCallback implements
                 overflowBuffer)));
       }
     } catch (Exception e) {
-      LOG.error("Bolt Executor init error {}", ServerUtils.stringifyError(e));
+      LOG.error("Bolt Executor init error {}", CoreUtil.stringifyError(e));
       exception = new RuntimeException(e);
     }
 
@@ -209,7 +213,7 @@ public class BoltExecutor extends RunnableCallback implements
         try {
           outTuple = (TupleImpl) deserializer.deserialize((byte[]) msg);
         } catch (Throwable t) {
-          LOG.error("Deserialize failed.{}", ServerUtils.stringifyError(t));
+          LOG.error("Deserialize failed.{}", CoreUtil.stringifyError(t));
           return;
         }
       }
@@ -298,8 +302,7 @@ public class BoltExecutor extends RunnableCallback implements
   @Override
   public Exception error() {
     if (null != exception) {
-      LOG.error("BoltExecutor Exception {}",
-          ServerUtils.stringifyError(exception));
+      LOG.error("BoltExecutor Exception {}", CoreUtil.stringifyError(exception));
     }
     return exception;
   }

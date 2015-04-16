@@ -25,28 +25,28 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import backtype.storm.ClojureClass;
+import org.apache.storm.ClojureClass;
+import org.apache.storm.cluster.StormClusterState;
+import org.apache.storm.config.ConfigUtil;
+import org.apache.storm.counter.Counters;
+import org.apache.storm.daemon.common.Common;
+import org.apache.storm.daemon.worker.WorkerData;
+import org.apache.storm.daemon.worker.executor.error.ITaskReportErr;
+import org.apache.storm.daemon.worker.executor.error.ReportErrorAndDie;
+import org.apache.storm.daemon.worker.executor.error.ThrottledReportErrorFn;
+import org.apache.storm.daemon.worker.executor.grouping.GroupingUtils;
+import org.apache.storm.daemon.worker.executor.grouping.MkGrouper;
+import org.apache.storm.daemon.worker.executor.task.Task;
+import org.apache.storm.daemon.worker.executor.task.TaskData;
+import org.apache.storm.daemon.worker.stats.CommonStats;
+import org.apache.storm.util.EvenSampler;
+
 import backtype.storm.generated.ExecutorInfo;
 import backtype.storm.messaging.IContext;
 import backtype.storm.metric.api.IMetric;
 import backtype.storm.serialization.KryoTupleDeserializer;
 import backtype.storm.task.WorkerTopologyContext;
 import backtype.storm.utils.DisruptorQueue;
-
-import com.tencent.jstorm.cluster.StormClusterState;
-import com.tencent.jstorm.config.ConfigUtils;
-import com.tencent.jstorm.counter.Counters;
-import com.tencent.jstorm.daemon.common.Common;
-import com.tencent.jstorm.daemon.executor.error.ITaskReportErr;
-import com.tencent.jstorm.daemon.executor.error.ReportErrorAndDie;
-import com.tencent.jstorm.daemon.executor.error.ThrottledReportErrorFn;
-import com.tencent.jstorm.daemon.executor.grouping.GroupingUtils;
-import com.tencent.jstorm.daemon.executor.grouping.MkGrouper;
-import com.tencent.jstorm.daemon.task.Task;
-import com.tencent.jstorm.daemon.task.TaskData;
-import com.tencent.jstorm.daemon.worker.WorkerData;
-import com.tencent.jstorm.stats.CommonStats;
-import com.tencent.jstorm.utils.EvenSampler;
 
 /**
  * 
@@ -121,7 +121,7 @@ public class ExecutorData implements Serializable {
     // or bolt with :common field)
     this.stats =
         ExecutorUtils.mkExecutorStats(executorType,
-            ConfigUtils.samplingRate(stormConf));
+            ConfigUtil.samplingRate(stormConf));
     this.intervalToTaskToMetricRegistry =
         new HashMap<Integer, Map<Integer, Map<String, IMetric>>>();
     this.taskToComponent = worker.getTasksToComponent();
@@ -132,7 +132,7 @@ public class ExecutorData implements Serializable {
     this.reportErrorAndDie =
         new ReportErrorAndDie(reportError, worker.getSuicideFn());
     this.deserializer = new KryoTupleDeserializer(stormConf, workerContext);
-    this.sampler = ConfigUtils.mkStatsSampler(stormConf);
+    this.sampler = ConfigUtil.mkStatsSampler(stormConf);
     // TODO: add in the executor-specific stuff in a :specific... or make a
     // spout-data, bolt-data function?
     // ///////////////////////

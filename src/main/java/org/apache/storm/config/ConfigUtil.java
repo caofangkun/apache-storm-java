@@ -13,6 +13,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.io.FileUtils;
 import org.apache.storm.ClojureClass;
 import org.apache.storm.util.CoreUtil;
+import org.apache.storm.util.EvenSampler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

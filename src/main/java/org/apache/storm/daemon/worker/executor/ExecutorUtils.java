@@ -24,8 +24,17 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.exec.util.MapUtils;
+import org.apache.storm.ClojureClass;
+import org.apache.storm.config.ConfigUtil;
+import org.apache.storm.daemon.worker.executor.task.TaskData;
+import org.apache.storm.daemon.worker.executor.task.TaskUtils;
+import org.apache.storm.daemon.worker.stats.BoltExecutorStats;
+import org.apache.storm.daemon.worker.stats.CommonStats;
+import org.apache.storm.daemon.worker.stats.SpoutExecutorStats;
+import org.apache.storm.guava.collect.Lists;
+import org.apache.storm.util.CoreUtil;
+import org.apache.storm.util.ReflectionUtils;
 
-import backtype.storm.ClojureClass;
 import backtype.storm.Config;
 import backtype.storm.Constants;
 import backtype.storm.generated.Bolt;
@@ -42,18 +51,9 @@ import backtype.storm.tuple.TupleImpl;
 import backtype.storm.utils.DisruptorQueue;
 import backtype.storm.utils.Utils;
 
-import com.google.common.collect.Lists;
 import com.lmax.disruptor.InsufficientCapacityException;
 import com.lmax.disruptor.SingleThreadedClaimStrategy;
 import com.lmax.disruptor.WaitStrategy;
-import com.tencent.jstorm.config.ConfigUtils;
-import com.tencent.jstorm.daemon.task.TaskData;
-import com.tencent.jstorm.daemon.task.TaskUtils;
-import com.tencent.jstorm.stats.BoltExecutorStats;
-import com.tencent.jstorm.stats.CommonStats;
-import com.tencent.jstorm.stats.SpoutExecutorStats;
-import com.tencent.jstorm.utils.ReflectionUtils;
-import com.tencent.jstorm.utils.ServerUtils;
 
 /**
  * 
@@ -79,7 +79,7 @@ public class ExecutorUtils {
   @ClojureClass(className = "backtype.storm.daemon.executor#executor-max-spout-pending")
   public static Integer executorMaxSpoutPending(Map stormConf, int numTasks) {
     Integer p =
-        ServerUtils.parseInt(stormConf.get(Config.TOPOLOGY_MAX_SPOUT_PENDING),
+        CoreUtil.parseInt(stormConf.get(Config.TOPOLOGY_MAX_SPOUT_PENDING),
             null);
     if (p != null) {
       return p * numTasks;
@@ -91,7 +91,7 @@ public class ExecutorUtils {
   public static DisruptorQueue batchTransferToworker(Map stormConf,
       ExecutorInfo executorInfo) {
     Integer bufferSize =
-        ServerUtils.parseInt(
+        CoreUtil.parseInt(
             stormConf.get(Config.TOPOLOGY_EXECUTOR_SEND_BUFFER_SIZE), 1024);
     WaitStrategy waitStrategy =
         (WaitStrategy) Utils.newInstance((String) stormConf
@@ -136,7 +136,7 @@ public class ExecutorUtils {
   @ClojureClass(className = "backtype.storm.daemon.executor#normalized-component-conf")
   public static Map normalizedComponentConf(Map stormConf,
       WorkerTopologyContext generalContext, String componentId) {
-    List<Object> to_remove = ConfigUtils.All_CONFIGS();
+    List<Object> to_remove = ConfigUtil.All_CONFIGS();
     to_remove.remove(Config.TOPOLOGY_DEBUG);
     to_remove.remove(Config.TOPOLOGY_MAX_SPOUT_PENDING);
     to_remove.remove(Config.TOPOLOGY_MAX_TASK_PARALLELISM);
@@ -149,7 +149,7 @@ public class ExecutorUtils {
     String jsonConf =
         generalContext.getComponentCommon(componentId).get_json_conf();
     if (jsonConf != null) {
-      specConf = (Map) ServerUtils.from_json(jsonConf);
+      specConf = (Map) CoreUtil.from_json(jsonConf);
     }
 
     for (Object p : to_remove) {
@@ -174,7 +174,7 @@ public class ExecutorUtils {
     TaskInfo taskInfo = null;
     try {
       taskInfo =
-          new IMetricsConsumer.TaskInfo(ServerUtils.localHostname(),
+          new IMetricsConsumer.TaskInfo(CoreUtil.localHostname(),
               workerContext.getThisWorkerPort(), executorData.getComponentId(),
               taskId, now, interval);
     } catch (UnknownHostException e) {
