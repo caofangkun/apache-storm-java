@@ -40,10 +40,10 @@ import org.apache.storm.util.thread.RunnableCallback;
 import backtype.storm.generated.Credentials;
 import backtype.storm.generated.ErrorInfo;
 import backtype.storm.generated.ExecutorInfo;
+import backtype.storm.generated.NodeInfo;
 import backtype.storm.generated.StormBase;
 import backtype.storm.scheduler.WorkerSlot;
 
-import com.sun.org.apache.xalan.internal.lib.NodeInfo;
 
 @ClojureClass(className = "backtype.storm.cluster#StormClusterState")
 public interface StormClusterState extends Serializable {

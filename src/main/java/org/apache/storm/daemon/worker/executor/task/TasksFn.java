@@ -24,8 +24,15 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.storm.ClojureClass;
+import org.apache.storm.config.ConfigUtil;
+import org.apache.storm.daemon.worker.executor.ExecutorData;
+import org.apache.storm.daemon.worker.executor.grouping.GroupingType;
+import org.apache.storm.daemon.worker.executor.grouping.MkGrouper;
+import org.apache.storm.daemon.worker.stats.CommonStats;
+import org.apache.storm.daemon.worker.stats.Stats;
 import org.apache.storm.guava.collect.Lists;
-import org.apache.storm.stats.CommonStats;
+import org.apache.storm.util.CoreUtil;
+import org.apache.storm.util.EvenSampler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,9 +69,9 @@ public class TasksFn {
         executorData.getStreamToComponentToGrouper();
     this.userContext = taskData.getUserContext();
     this.executorStats = executorData.getStats();
-    this.evenSampler = ConfigUtils.mkStatsSampler(stormConf);
+    this.evenSampler = ConfigUtil.mkStatsSampler(stormConf);
     this.isDebug =
-        ServerUtils.parseBoolean(stormConf.get(Config.TOPOLOGY_DEBUG), false);
+        CoreUtil.parseBoolean(stormConf.get(Config.TOPOLOGY_DEBUG), false);
   }
 
   @ClojureClass(className = "backtype.storm.daemon.task#mk-tasks-fn#fn")

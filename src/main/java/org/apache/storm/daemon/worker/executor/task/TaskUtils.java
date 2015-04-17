@@ -26,7 +26,10 @@ import org.apache.storm.ClojureClass;
 import org.apache.storm.config.ConfigUtil;
 import org.apache.storm.daemon.worker.WorkerData;
 import org.apache.storm.daemon.worker.executor.ExecutorData;
+import org.apache.storm.daemon.worker.executor.ExecutorTransferFn;
+import org.apache.storm.daemon.worker.executor.tuple.TuplePair;
 import org.apache.storm.guava.collect.Lists;
+import org.apache.storm.thrift.Thrift;
 
 import backtype.storm.generated.Bolt;
 import backtype.storm.generated.ComponentObject;

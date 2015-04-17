@@ -20,14 +20,14 @@ package org.apache.storm.daemon.worker.executor;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import backtype.storm.ClojureClass;
+import org.apache.storm.ClojureClass;
+import org.apache.storm.daemon.worker.executor.tuple.TuplePair;
+import org.apache.storm.util.thread.RunnableCallback;
+
 import backtype.storm.Constants;
 import backtype.storm.task.WorkerTopologyContext;
 import backtype.storm.tuple.TupleImpl;
 import backtype.storm.utils.DisruptorQueue;
-
-import com.tencent.jstorm.tuple.TuplePair;
-import com.tencent.jstorm.utils.thread.RunnableCallback;
 
 /**
  * 
@@ -51,9 +51,10 @@ public class TicksRunable extends RunnableCallback {
 
   @Override
   public void run() {
+    //Constants.SYSTEM_TASK_ID
     TupleImpl tupleImpl =
         new TupleImpl(context, Arrays.asList((Object) tickTimeSecs),
-            Constants.SYSTEM_TASK_ID, Constants.SYSTEM_TICK_STREAM_ID);
+            -1, Constants.SYSTEM_TICK_STREAM_ID);
     TuplePair tm = new TuplePair(null, tupleImpl);
     ArrayList<TuplePair> pairs = new ArrayList<TuplePair>();
     pairs.add(tm);

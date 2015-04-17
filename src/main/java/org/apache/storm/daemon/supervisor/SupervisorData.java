@@ -24,19 +24,19 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import backtype.storm.ClojureClass;
+import org.apache.storm.ClojureClass;
+import org.apache.storm.cluster.StormClusterState;
+import org.apache.storm.cluster.StormZkClusterState;
+import org.apache.storm.config.ConfigUtil;
+import org.apache.storm.daemon.common.Assignment;
+import org.apache.storm.daemon.worker.executor.UptimeComputer;
+import org.apache.storm.util.CoreUtil;
+
 import backtype.storm.Config;
 import backtype.storm.generated.NodeInfo;
 import backtype.storm.messaging.IContext;
 import backtype.storm.scheduler.ISupervisor;
 import backtype.storm.utils.LocalState;
-
-import com.tencent.jstorm.cluster.StormClusterState;
-import com.tencent.jstorm.cluster.StormZkClusterState;
-import com.tencent.jstorm.config.ConfigUtils;
-import com.tencent.jstorm.daemon.common.Assignment;
-import com.tencent.jstorm.daemon.executor.UptimeComputer;
-import com.tencent.jstorm.utils.ServerUtils;
 
 @ClojureClass(className = "backtype.storm.daemon.supervisor#supervisor-data")
 public class SupervisorData implements Serializable {
@@ -73,13 +73,13 @@ public class SupervisorData implements Serializable {
       conf.put(Config.NIMBUS_HOST, serverInfo.get_node());
       conf.put(Config.NIMBUS_THRIFT_PORT, serverInfo.get_port().toArray()[0]);
     }
-    this.localState = ConfigUtils.supervisorState(conf);
+    this.localState = ConfigUtil.supervisorState(conf);
     this.supervisorId = isupervisor.getSupervisorId();
     this.assignmentId = isupervisor.getAssignmentId();
     this.sharedContext = sharedContext;
     this.myHostname =
-        ServerUtils.parseString(conf.get(Config.STORM_LOCAL_HOSTNAME),
-            ServerUtils.localHostname());
+        CoreUtil.parseString(conf.get(Config.STORM_LOCAL_HOSTNAME),
+            CoreUtil.localHostname());
     conf.put(Config.STORM_LOCAL_HOSTNAME, myHostname);
     // used for reporting used ports when heartbeating
     this.currAssignment = new HashMap<Integer, LocalAssignment>();

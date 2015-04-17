@@ -21,7 +21,8 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
-import backtype.storm.ClojureClass;
+import org.apache.storm.ClojureClass;
+
 import backtype.storm.generated.ExecutorInfo;
 
 @ClojureClass(className = "backtype.storm.daemon.common#WorkerHeartbeat")

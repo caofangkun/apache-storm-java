@@ -21,27 +21,25 @@ import java.io.File;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.storm.ClojureClass;
+import org.apache.storm.config.ConfigUtil;
+import org.apache.storm.daemon.supervisor.event.EventManager;
+import org.apache.storm.daemon.supervisor.event.EventManagerImp;
+import org.apache.storm.daemon.supervisor.heartbeat.SupervisorHeartbeat;
+import org.apache.storm.daemon.supervisor.sync.AddEventFn;
+import org.apache.storm.daemon.supervisor.sync.SyncProcessesEvent;
+import org.apache.storm.daemon.supervisor.sync.SynchronizeSupervisorEvent;
+import org.apache.storm.daemon.worker.DefaultKillFn;
+import org.apache.storm.http.HttpServer;
+import org.apache.storm.util.thread.AsyncLoopThread;
+import org.apache.storm.util.thread.RunnableCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.ClojureClass;
 import backtype.storm.Config;
 import backtype.storm.messaging.IContext;
 import backtype.storm.scheduler.ISupervisor;
 import backtype.storm.utils.Utils;
-
-import com.tencent.jstorm.config.ConfigUtils;
-import com.tencent.jstorm.daemon.supervisor.heartbeat.SupervisorHeartbeat;
-import com.tencent.jstorm.daemon.supervisor.sync.AddEventFn;
-import com.tencent.jstorm.daemon.supervisor.sync.SyncProcessesEvent;
-import com.tencent.jstorm.daemon.supervisor.sync.SynchronizeSupervisorEvent;
-import com.tencent.jstorm.daemon.worker.DefaultKillFn;
-import com.tencent.jstorm.event.EventManager;
-import com.tencent.jstorm.event.EventManagerImp;
-import com.tencent.jstorm.http.HttpServer;
-import com.tencent.jstorm.utils.ServerUtils;
-import com.tencent.jstorm.utils.thread.AsyncLoopThread;
-import com.tencent.jstorm.utils.thread.RunnableCallback;
 
 @ClojureClass(className = "backtype.storm.daemon.supervisor")
 public class Supervisor {
@@ -57,8 +55,8 @@ public class Supervisor {
   public SupervisorManager mkSupervisor(Map conf, IContext sharedContext,
       ISupervisor isupervisor) throws Exception {
     LOG.info("Starting Supervisor with conf " + conf);
-    isupervisor.prepare(conf, ConfigUtils.supervisorIsupervisorDir(conf));
-    FileUtils.cleanDirectory(new File(ConfigUtils.supervisorTmpDir(conf)));
+    isupervisor.prepare(conf, ConfigUtil.supervisorIsupervisorDir(conf));
+    FileUtils.cleanDirectory(new File(ConfigUtil.supervisorTmpDir(conf)));
 
     supervisorData = new SupervisorData(conf, sharedContext, isupervisor);
 
@@ -115,7 +113,7 @@ public class Supervisor {
   @ClojureClass(className = "backtype.storm.daemon.supervisor#launch")
   public void launch(ISupervisor supervisor) throws Exception {
     conf = Utils.readStormConfig();
-    ConfigUtils.validateDistributedMode(conf);
+    ConfigUtil.validateDistributedMode(conf);
     supervisorManager = mkSupervisor(conf, null, supervisor);
 
     addShutdownHookWithForceKillInOneSec();

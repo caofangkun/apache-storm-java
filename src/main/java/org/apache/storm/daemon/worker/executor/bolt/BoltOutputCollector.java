@@ -27,6 +27,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.storm.ClojureClass;
+import org.apache.storm.counter.Counters;
+import org.apache.storm.counter.TaskCounter;
 import org.apache.storm.daemon.acker.AckerBolt;
 import org.apache.storm.daemon.worker.executor.ExecutorTransferFn;
 import org.apache.storm.daemon.worker.executor.error.ITaskReportErr;

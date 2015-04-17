@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.storm.ClojureClass;
 import org.apache.storm.cluster.StormClusterState;
+import org.apache.storm.daemon.nimbus.transitions.StatusType;
 import org.apache.storm.daemon.worker.WorkerData;
 import org.apache.storm.util.CoreUtil;
 import org.apache.storm.util.thread.RunnableCallback;
@@ -29,7 +30,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
-import backtype.storm.daemon.common.StormBase;
+import backtype.storm.generated.StormBase;
+import backtype.storm.generated.TopologyStatus;
 
 @ClojureClass(className = "backtype.storm.daemon.worker#refresh-storm-active")
 public class RefreshStormActive extends RunnableCallback {
@@ -85,8 +87,7 @@ public class RefreshStormActive extends RunnableCallback {
       boolean isActive = newTopologyStatus.equals(StatusType.active);
       workerData.getStormActiveAtom().set(isActive);
     } catch (Exception e) {
-      LOG.error("Failed to get topology from ZK ",
-          CoreUtil.stringifyError(e));
+      LOG.error("Failed to get topology from ZK ", CoreUtil.stringifyError(e));
     }
   }
 

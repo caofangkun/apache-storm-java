@@ -20,12 +20,15 @@ package org.apache.storm.daemon.worker.executor;
 import java.util.Map;
 
 import org.apache.storm.ClojureClass;
+import org.apache.storm.cluster.StormClusterState;
+import org.apache.storm.counter.Counters;
 import org.apache.storm.daemon.worker.executor.task.TaskData;
+import org.apache.storm.daemon.worker.stats.Stats;
+import org.apache.storm.daemon.worker.stats.StatsData;
 import org.apache.storm.util.thread.AsyncLoopThread;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.cluster.StormClusterState;
 import backtype.storm.generated.ExecutorInfo;
 import backtype.storm.hooks.ITaskHook;
 import backtype.storm.spout.ISpout;

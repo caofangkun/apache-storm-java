@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import org.apache.storm.ClojureClass;
 import org.apache.storm.daemon.worker.WorkerData;
+import org.apache.storm.daemon.worker.executor.tuple.TuplePair;
 import org.apache.storm.daemon.worker.transfer.TransferFn;
 import org.apache.storm.util.thread.RunnableCallback;
 

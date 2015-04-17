@@ -22,20 +22,19 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.storm.ClojureClass;
+import org.apache.storm.config.ConfigUtil;
+import org.apache.storm.daemon.common.Common;
+import org.apache.storm.daemon.worker.WorkerData;
+import org.apache.storm.util.CoreUtil;
+import org.apache.storm.util.thread.RunnableCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.ClojureClass;
 import backtype.storm.Config;
 import backtype.storm.generated.ExecutorInfo;
 import backtype.storm.utils.LocalState;
 import backtype.storm.utils.MutableLong;
-
-import com.tencent.jstorm.config.ConfigUtils;
-import com.tencent.jstorm.daemon.common.Common;
-import com.tencent.jstorm.daemon.worker.WorkerData;
-import com.tencent.jstorm.utils.ServerUtils;
-import com.tencent.jstorm.utils.thread.RunnableCallback;
 
 public class WorkerLocalHeartbeatRunable extends RunnableCallback {
   private static final long serialVersionUID = 1L;
@@ -66,7 +65,7 @@ public class WorkerLocalHeartbeatRunable extends RunnableCallback {
     this.active = workerData.getStormActiveAtom();
     this.processId = workerData.getProcessId();
     this.frequence =
-        ServerUtils.parseInt(conf.get(Config.WORKER_HEARTBEAT_FREQUENCY_SECS),
+        CoreUtil.parseInt(conf.get(Config.WORKER_HEARTBEAT_FREQUENCY_SECS),
             10);
     this.retryCount = new MutableLong(0);
   }
@@ -74,13 +73,13 @@ public class WorkerLocalHeartbeatRunable extends RunnableCallback {
   @ClojureClass(className = "backtype.storm.daemon.worker#do-heartbeat")
   public void doHeartbeat() throws IOException {
 
-    int currtime = ServerUtils.current_time_secs();
+    int currtime = CoreUtil.current_time_secs();
     WorkerLocalHeartbeat hb =
         new WorkerLocalHeartbeat(currtime, topologyId, executors, port,
             processId);
     LOG.debug("Doing heartbeat " + hb.toString());
     // do the local-file-system heartbeat.
-    LocalState state = ConfigUtils.workerState(conf, worker_id);
+    LocalState state = ConfigUtil.workerState(conf, worker_id);
     state.put(Common.LS_WORKER_HEARTBEAT, hb, false);
     // this is just in case supervisor is down so that disk doesn't fill up.
     // it shouldn't take supervisor 120 seconds between listing dir
@@ -94,7 +93,7 @@ public class WorkerLocalHeartbeatRunable extends RunnableCallback {
       doHeartbeat();
       retryCount = new MutableLong(0);
     } catch (IOException e) {
-      LOG.error("Failed doing Worker HeartBeat ", ServerUtils.stringifyError(e));
+      LOG.error("Failed doing Worker HeartBeat ", CoreUtil.stringifyError(e));
       retryCount.increment();
       if (retryCount.get() >= 3) {
         exception = new RuntimeException(e);
@@ -107,7 +106,7 @@ public class WorkerLocalHeartbeatRunable extends RunnableCallback {
   public Exception error() {
     if (null != exception) {
       LOG.error("Worker Local Heartbeat exception: {}",
-          ServerUtils.stringifyError(exception));
+          CoreUtil.stringifyError(exception));
     }
     return exception;
   }

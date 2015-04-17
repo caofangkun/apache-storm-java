@@ -22,8 +22,7 @@ import java.util.List;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
-
-import backtype.storm.ClojureClass;
+import org.apache.storm.ClojureClass;
 
 @ClojureClass(className = "backtype.storm.daemon.executor#mk-threads:spout#send-spout-msg#")
 public class TupleInfo implements Serializable {

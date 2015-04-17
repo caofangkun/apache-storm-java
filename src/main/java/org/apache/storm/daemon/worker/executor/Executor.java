@@ -23,8 +23,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.storm.ClojureClass;
+import org.apache.storm.daemon.worker.DefaultKillFn;
 import org.apache.storm.daemon.worker.WorkerData;
+import org.apache.storm.daemon.worker.executor.bolt.BoltExecutor;
+import org.apache.storm.daemon.worker.executor.spout.SpoutExecutor;
 import org.apache.storm.daemon.worker.executor.task.TaskData;
+import org.apache.storm.util.CoreUtil;
 import org.apache.storm.util.thread.AsyncLoopThread;
 import org.apache.storm.util.thread.RunnableCallback;
 import org.slf4j.Logger;
@@ -102,12 +106,12 @@ public class Executor implements Serializable {
   @ClojureClass(className = "backtype.storm.daemon.executor#setup-ticks!")
   private void setupTicks(WorkerData workerData, ExecutorData executorData) {
     Integer tickTimeSecs =
-        ServerUtils.parseInt(
+        CoreUtil.parseInt(
             stormConf.get(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS), null);
     if (tickTimeSecs != null) {
       boolean isSystemId = Utils.isSystemId(executorData.getComponentId());
       boolean isEnableMessageTimeOuts =
-          ServerUtils.parseBoolean(
+          CoreUtil.parseBoolean(
               stormConf.get(Config.TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS), true);
       boolean isSpout =
           executorData.getExecutorType().equals(ExecutorType.spout);

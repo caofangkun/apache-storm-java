@@ -31,29 +31,28 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.thrift.TException;
+import org.apache.storm.ClojureClass;
+import org.apache.storm.cluster.StormClusterState;
+import org.apache.storm.config.ConfigUtil;
+import org.apache.storm.daemon.common.Assignment;
+import org.apache.storm.daemon.common.Common;
+import org.apache.storm.daemon.supervisor.psim.ProcessSimulator;
+import org.apache.storm.daemon.worker.Worker;
+import org.apache.storm.daemon.worker.WorkerShutdown;
+import org.apache.storm.daemon.worker.WorkerStatus;
+import org.apache.storm.daemon.worker.heartbeat.WorkerLocalHeartbeat;
+import org.apache.storm.util.CoreUtil;
+import org.apache.storm.util.thread.RunnableCallback;
+import org.apache.thrift7.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.ClojureClass;
 import backtype.storm.Config;
 import backtype.storm.generated.AuthorizationException;
 import backtype.storm.generated.ExecutorInfo;
 import backtype.storm.scheduler.WorkerSlot;
 import backtype.storm.utils.LocalState;
 import backtype.storm.utils.Utils;
-
-import com.tencent.jstorm.cluster.StormClusterState;
-import com.tencent.jstorm.config.ConfigUtils;
-import com.tencent.jstorm.daemon.common.Assignment;
-import com.tencent.jstorm.daemon.common.Common;
-import com.tencent.jstorm.daemon.worker.Worker;
-import com.tencent.jstorm.daemon.worker.WorkerShutdown;
-import com.tencent.jstorm.daemon.worker.WorkerStatus;
-import com.tencent.jstorm.daemon.worker.heartbeat.WorkerLocalHeartbeat;
-import com.tencent.jstorm.psim.ProcessSimulator;
-import com.tencent.jstorm.utils.ServerUtils;
-import com.tencent.jstorm.utils.thread.RunnableCallback;
 
 public class SupervisorUtils {
   private static final Logger LOG = LoggerFactory
@@ -215,10 +214,10 @@ public class SupervisorUtils {
   @SuppressWarnings("rawtypes")
   @ClojureClass(className = "backtype.storm.daemon.supervisor#read-downloaded-storm-ids")
   public static Set<String> readDownloadedStormIds(Map conf) throws IOException {
-    String path = ConfigUtils.supervisorStormdistRoot(conf);
+    String path = ConfigUtil.supervisorStormdistRoot(conf);
     Set<String> result = new HashSet<String>();
-    for (String stormId : ServerUtils.readDirContents(path)) {
-      result.add(ServerUtils.urlDecode(stormId));
+    for (String stormId : CoreUtil.readDirContents(path)) {
+      result.add(CoreUtil.urlDecode(stormId));
     }
     return result;
   }
@@ -229,11 +228,11 @@ public class SupervisorUtils {
       String workerId) {
     WorkerLocalHeartbeat ret = null;
     try {
-      LocalState localState = ConfigUtils.workerState(conf, workerId);
+      LocalState localState = ConfigUtil.workerState(conf, workerId);
       ret = (WorkerLocalHeartbeat) localState.get(Common.LS_WORKER_HEARTBEAT);
     } catch (IOException e) {
       LOG.warn("Failed to read local heartbeat for workerId : " + workerId
-          + ",Ignoring exception." + ServerUtils.stringifyError(e));
+          + ",Ignoring exception." + CoreUtil.stringifyError(e));
     }
     return ret;
   }
@@ -243,12 +242,12 @@ public class SupervisorUtils {
   public static Set<String> myWorkerIds(Map conf) {
     String path;
     try {
-      path = ConfigUtils.workerRoot(conf);
+      path = ConfigUtil.workerRoot(conf);
     } catch (IOException e1) {
       LOG.error("Failed to get Local worker dir", e1);
       return new HashSet<String>();
     }
-    return ServerUtils.readDirContents(path);
+    return CoreUtil.readDirContents(path);
   }
 
   /**
@@ -304,7 +303,7 @@ public class SupervisorUtils {
   public static void downloadStormCode(Map conf, String stormId,
       String masterCodeDir, Object downloadLock) throws IOException,
       TException, AuthorizationException {
-    boolean isDistributeMode = ConfigUtils.isDistributedMode(conf);
+    boolean isDistributeMode = ConfigUtil.isDistributedMode(conf);
     if (isDistributeMode) {
       downloadDistributeStormCode(conf, stormId, masterCodeDir, downloadLock);
     } else {
@@ -320,33 +319,33 @@ public class SupervisorUtils {
     // STORM_LOCAL_DIR/supervisor/tmp/(UUID)
     synchronized (downloadLock) {
       String tmproot =
-          ConfigUtils.supervisorTmpDir(conf) + "/"
+          ConfigUtil.supervisorTmpDir(conf) + "/"
               + UUID.randomUUID().toString();
-      String stormroot = ConfigUtils.supervisorStormdistRoot(conf, stormId);
+      String stormroot = ConfigUtil.supervisorStormdistRoot(conf, stormId);
       FileUtils.forceMkdir(new File(tmproot));
 
-      String masterStormjarPath = ConfigUtils.masterStormjarPath(masterCodeDir);
+      String masterStormjarPath = ConfigUtil.masterStormjarPath(masterCodeDir);
       String supervisorStormJarPath =
-          ConfigUtils.supervisorStormjarPath(tmproot);
+          ConfigUtil.supervisorStormjarPath(tmproot);
       Utils
           .downloadFromMaster(conf, masterStormjarPath, supervisorStormJarPath);
 
       String masterStormcodePath =
-          ConfigUtils.masterStormcodePath(masterCodeDir);
+          ConfigUtil.masterStormcodePath(masterCodeDir);
       String supervisorStormcodePath =
-          ConfigUtils.supervisorStormcodePath(tmproot);
+          ConfigUtil.supervisorStormcodePath(tmproot);
       Utils.downloadFromMaster(conf, masterStormcodePath,
           supervisorStormcodePath);
 
       String masterStormConfPath =
-          ConfigUtils.masterStormconfPath(masterCodeDir);
+          ConfigUtil.masterStormconfPath(masterCodeDir);
       String supervisorStormconfPath =
-          ConfigUtils.supervisorStormconfPath(tmproot);
+          ConfigUtil.supervisorStormconfPath(tmproot);
       Utils.downloadFromMaster(conf, masterStormConfPath,
           supervisorStormconfPath);
 
-      ServerUtils.extractDirFromJar(supervisorStormJarPath,
-          ConfigUtils.RESOURCES_SUBDIR, tmproot);
+      CoreUtil.extractDirFromJar(supervisorStormJarPath,
+          ConfigUtil.RESOURCES_SUBDIR, tmproot);
       FileUtils.moveDirectory(new File(tmproot), new File(stormroot));
     }
   }
@@ -355,22 +354,22 @@ public class SupervisorUtils {
   @ClojureClass(className = "backtype.storm.daemon.supervisor#download-storm-code#local")
   public static void downloadLocalStormCode(Map conf, String stormId,
       String masterCodeDir, Object downloadLock) throws IOException, TException {
-    String stormroot = ConfigUtils.supervisorStormdistRoot(conf, stormId);
+    String stormroot = ConfigUtil.supervisorStormdistRoot(conf, stormId);
 
     synchronized (downloadLock) {
       FileUtils.copyDirectory(new File(masterCodeDir), new File(stormroot));
 
       ClassLoader classloader = Thread.currentThread().getContextClassLoader();
       String resourcesJar = resourcesJar();
-      URL url = classloader.getResource(ConfigUtils.RESOURCES_SUBDIR);
+      URL url = classloader.getResource(ConfigUtil.RESOURCES_SUBDIR);
       String targetDir =
-          stormroot + ServerUtils.filePathSeparator()
-              + ConfigUtils.RESOURCES_SUBDIR;
+          stormroot + CoreUtil.filePathSeparator()
+              + ConfigUtil.RESOURCES_SUBDIR;
       if (resourcesJar != null) {
         LOG.info("Extracting resources from jar at " + resourcesJar + " to "
             + targetDir);
-        ServerUtils.extractDirFromJar(resourcesJar,
-            ConfigUtils.RESOURCES_SUBDIR, stormroot);
+        CoreUtil.extractDirFromJar(resourcesJar, ConfigUtil.RESOURCES_SUBDIR,
+            stormroot);
       } else if (url != null) {
         LOG.info("Copying resources at " + url.toString() + " to " + targetDir);
         FileUtils.copyDirectory(new File(url.getFile()), (new File(targetDir)));
@@ -380,7 +379,7 @@ public class SupervisorUtils {
 
   @ClojureClass(className = "backtype.storm.daemon.supervisor#resources-jar")
   private static String resourcesJar() {
-    String path = ServerUtils.currentClasspath();
+    String path = CoreUtil.currentClasspath();
     if (path == null) {
       return null;
     }
@@ -395,8 +394,7 @@ public class SupervisorUtils {
     List<String> rtn = new ArrayList<String>();
     int size = jarPaths.size();
     for (int i = 0; i < size; i++) {
-      if (ServerUtils.zipContainsDir(jarPaths.get(i),
-          ConfigUtils.RESOURCES_SUBDIR)) {
+      if (CoreUtil.zipContainsDir(jarPaths.get(i), ConfigUtil.RESOURCES_SUBDIR)) {
         rtn.add(jarPaths.get(i));
       }
     }
@@ -409,7 +407,7 @@ public class SupervisorUtils {
   @ClojureClass(className = "backtype.storm.daemon.supervisor#launch-worker")
   public static void launchWorker(Map conf, SupervisorData supervisor,
       String stormId, Integer port, String workerId) throws Exception {
-    if (ConfigUtils.isLocalMode(conf)) {
+    if (ConfigUtil.isLocalMode(conf)) {
       launchLocalWorker(supervisor, stormId, port, workerId);
     } else {
       launchDistributedWorker(supervisor, stormId, port, workerId);
@@ -421,7 +419,7 @@ public class SupervisorUtils {
   private static void launchLocalWorker(SupervisorData supervisor,
       String stormId, Integer port, String workerId) throws Exception {
     Map conf = supervisor.getConf();
-    String pid = ServerUtils.uuid();
+    String pid = CoreUtil.uuid();
     WorkerShutdown worker =
         Worker.mkWorker(conf, supervisor.getSharedContext(), stormId,
             supervisor.getAssignmentId(), port, workerId);
@@ -435,29 +433,28 @@ public class SupervisorUtils {
       String stormId, Integer port, String workerId) throws IOException {
     Map conf = supervisor.getConf();
     String stormLocalHostname =
-        ServerUtils.parseString(conf.get(Config.STORM_LOCAL_HOSTNAME),
-            "localhost");
+        CoreUtil
+            .parseString(conf.get(Config.STORM_LOCAL_HOSTNAME), "localhost");
     String stormhome = System.getProperty("storm.home");
     String stormOptions = System.getProperty("storm.options");
     String stormLogDir =
-        ServerUtils.parseString(System.getProperty("storm.log.dir"), stormhome
-            + ServerUtils.filePathSeparator() + "logs");
-    String stormroot = ConfigUtils.supervisorStormdistRoot(conf, stormId);
+        CoreUtil.parseString(System.getProperty("storm.log.dir"), stormhome
+            + CoreUtil.filePathSeparator() + "logs");
+    String stormroot = ConfigUtil.supervisorStormdistRoot(conf, stormId);
     String jlp = jlp(stormroot, conf);
-    String stormjar = ConfigUtils.supervisorStormjarPath(stormroot);
-    Map stormConf = ConfigUtils.readSupervisorStormConf(conf, stormId);
+    String stormjar = ConfigUtil.supervisorStormjarPath(stormroot);
+    Map stormConf = ConfigUtil.readSupervisorStormConf(conf, stormId);
 
     String classPath =
-        ServerUtils.addToClasspath(ServerUtils.currentClasspath(),
+        CoreUtil.addToClasspath(CoreUtil.currentClasspath(),
             new String[] { stormjar });
     String[] topoClasspath = null;
     String topologyClassPath =
-        ServerUtils.parseString(stormConf.get(Config.TOPOLOGY_CLASSPATH), null);
+        CoreUtil.parseString(stormConf.get(Config.TOPOLOGY_CLASSPATH), null);
     if (null != topologyClassPath) {
       topoClasspath = new String[] { topologyClassPath };
       classPath =
-          ServerUtils.addToClasspath(ServerUtils.currentClasspath(),
-              topoClasspath);
+          CoreUtil.addToClasspath(CoreUtil.currentClasspath(), topoClasspath);
     }
 
     // worker-childopts
@@ -492,8 +489,7 @@ public class SupervisorUtils {
     topologyWorkerEnvironment.put("LD_LIBRARY_PATH", jlp);
 
     String user =
-        ServerUtils.parseString(stormConf.get(Config.TOPOLOGY_SUBMITTER_USER),
-            "");
+        CoreUtil.parseString(stormConf.get(Config.TOPOLOGY_SUBMITTER_USER), "");
 
     String logfilename = "worker-" + port + ".log";
 
@@ -547,7 +543,7 @@ public class SupervisorUtils {
     Process p = null;
     try {
       p =
-          ServerUtils.launchProcess(commandSB.toString(),
+          CoreUtil.launchProcess(commandSB.toString(),
               topologyWorkerEnvironment);
     } finally {
       if (p != null) {
@@ -587,7 +583,7 @@ public class SupervisorUtils {
   @ClojureClass(className = "backtype.storm.daemon.supervisor#jlp")
   private static String jlp(String stormroot, Map conf) {
     String resourceRoot =
-        stormroot + File.separator + ConfigUtils.RESOURCES_SUBDIR;
+        stormroot + File.separator + ConfigUtil.RESOURCES_SUBDIR;
     String os = System.getProperty("os.name").replaceAll("\\s+", "_");
     String arch = System.getProperty("os.arch");
     String javaLibraryPath = (String) conf.get(Config.JAVA_LIBRARY_PATH);
@@ -623,7 +619,7 @@ public class SupervisorUtils {
     if (javaHome == null) {
       return "java";
     } else {
-      String filePathSeparator = ServerUtils.filePathSeparator();
+      String filePathSeparator = CoreUtil.filePathSeparator();
       return javaHome + filePathSeparator + "bin" + filePathSeparator + "java";
     }
   }
@@ -665,7 +661,7 @@ public class SupervisorUtils {
   @ClojureClass(className = "backtype.storm.daemon.supervisor#is-worker-hb-timed-out?")
   public static boolean isWorkerHbTimedOut(int now, WorkerLocalHeartbeat hb,
       Map conf) {
-    return ((now - hb.getTimeSecs()) > ServerUtils.parseInt(
+    return ((now - hb.getTimeSecs()) > CoreUtil.parseInt(
         conf.get(Config.SUPERVISOR_WORKER_TIMEOUT_SECS), 30));
   }
 
@@ -724,7 +720,7 @@ public class SupervisorUtils {
           || !matchesAnAssignment(hb, assignedExecutors)) {
         state = WorkerStatus.disallowed;
       } else if (hb.getProcessId() != null
-          && !ServerUtils.isProcessExists(hb.getProcessId())) {
+          && !CoreUtil.isProcessExists(hb.getProcessId())) {
         state = WorkerStatus.processNotExists;
       } else if (isWorkerProcessDied(id) || isWorkerHbTimedOut(now, hb, conf)) {
         state = WorkerStatus.timedOut;
@@ -752,7 +748,7 @@ public class SupervisorUtils {
 
   @ClojureClass(className = "backtype.storm.daemon.supervisor#generate-supervisor-id")
   public static String generateSupervisorId() {
-    return ServerUtils.uuid();
+    return CoreUtil.uuid();
   }
 
   @SuppressWarnings("rawtypes")
@@ -765,10 +761,10 @@ public class SupervisorUtils {
     }
     String stormHome = System.getProperty("storm.home");
     String wl =
-        ServerUtils.parseString(conf.get(Config.SUPERVISOR_WORKER_LAUNCHER),
+        CoreUtil.parseString(conf.get(Config.SUPERVISOR_WORKER_LAUNCHER),
             stormHome + "/bin/worker-launcher");
     String command = wl + " " + user;
-    return ServerUtils.launchProcess(command, environment);
+    return CoreUtil.launchProcess(command, environment);
   }
 
   @SuppressWarnings("rawtypes")
@@ -803,35 +799,35 @@ public class SupervisorUtils {
     Map<String, String> environment = new HashMap<String, String>();
     environment.put("rmr", path);
     workerLauncherAndWait(conf, user, environment);
-    if (ServerUtils.existsFile(path)) {
+    if (CoreUtil.existsFile(path)) {
       throw new RuntimeException(path + " was not deleted");
     }
   }
 
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   @ClojureClass(className = "backtype.storm.daemon.supervisor#try-cleanup-worker")
   public static void tryCleanupWorker(Map conf, String id, String user) {
     try {
-      String workerRoot = ConfigUtils.workerRoot(conf, id);
+      String workerRoot = ConfigUtil.workerRoot(conf, id);
       if (new File(workerRoot).exists()) {
         boolean supervisorRunWorkerAsUser =
-            ServerUtils.parseBoolean(
+            CoreUtil.parseBoolean(
                 conf.get(Config.SUPERVISOR_RUN_WORKER_AS_USER), false);
         if (supervisorRunWorkerAsUser) {
           rmrAsUser(conf, id, user, workerRoot);
         } else {
-          ServerUtils.rmr(ConfigUtils.workerHeartbeatsRoot(conf, id));
+          CoreUtil.rmr(ConfigUtil.workerHeartbeatsRoot(conf, id));
           // this avoids a race condition with worker or subprocess writing pid
           // around same time
-          ServerUtils.rmpath(ConfigUtils.workerPidsRoot(conf, id));
-          ServerUtils.rmpath(ConfigUtils.workerRoot(conf, id));
+          CoreUtil.rmpath(ConfigUtil.workerPidsRoot(conf, id));
+          CoreUtil.rmpath(ConfigUtil.workerRoot(conf, id));
         }
-        ConfigUtils.removeWorkerUser(conf, id);
+        ConfigUtil.removeWorkerUser(conf, id);
         removeDeadWorker(id);
       }
     } catch (Exception e) {
       LOG.warn("Failed to cleanup worker " + id + ". Will retry later. For "
-          + ServerUtils.stringifyError(e));
+          + CoreUtil.stringifyError(e));
     }
   }
 }

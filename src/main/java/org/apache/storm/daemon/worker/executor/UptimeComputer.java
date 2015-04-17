@@ -17,7 +17,7 @@
  */
 package org.apache.storm.daemon.worker.executor;
 
-import com.tencent.jstorm.utils.ServerUtils;
+import org.apache.storm.util.CoreUtil;
 
 /**
  * 
@@ -31,10 +31,10 @@ public class UptimeComputer {
   int start_time = 0;
 
   public UptimeComputer() {
-    start_time = ServerUtils.current_time_secs();
+    start_time = CoreUtil.current_time_secs();
   }
 
   public synchronized int uptime() {
-    return ServerUtils.timeDelta(start_time);
+    return CoreUtil.timeDelta(start_time);
   }
 }

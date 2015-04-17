@@ -17,22 +17,18 @@
  */
 package org.apache.storm.daemon.worker.executor.spout;
 
+import org.apache.storm.ClojureClass;
+import org.apache.storm.daemon.worker.executor.ExecutorData;
+import org.apache.storm.daemon.worker.executor.task.TaskData;
+import org.apache.storm.daemon.worker.executor.task.TaskUtils;
+import org.apache.storm.daemon.worker.stats.CommonStats;
+import org.apache.storm.daemon.worker.stats.SpoutExecutorStats;
+import org.apache.storm.daemon.worker.stats.Stats;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.ClojureClass;
-import backtype.storm.Config;
 import backtype.storm.hooks.info.SpoutFailInfo;
 import backtype.storm.spout.ISpout;
-
-import com.tencent.jstorm.daemon.builtinMetrics.BuiltinMetrics;
-import com.tencent.jstorm.daemon.executor.ExecutorData;
-import com.tencent.jstorm.daemon.task.TaskData;
-import com.tencent.jstorm.daemon.task.TaskUtils;
-import com.tencent.jstorm.stats.CommonStats;
-import com.tencent.jstorm.stats.SpoutExecutorStats;
-import com.tencent.jstorm.stats.Stats;
-import com.tencent.jstorm.utils.ServerUtils;
 
 @ClojureClass(className = "backtype.storm.daemon.executor#fail-spout-msg")
 public class FailSpoutMsg implements Runnable {

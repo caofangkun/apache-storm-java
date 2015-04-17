@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
+import backtype.storm.generated.LSSupervisorId;
 import backtype.storm.scheduler.ISupervisor;
 import backtype.storm.utils.LocalState;
 import clojure.lang.Atom;
@@ -56,11 +57,14 @@ public class StandaloneSupervisor implements ISupervisor {
     try {
       confAtom.reset(conf);
       localState = new LocalState(localDir);
-      String currId = (String) localState.get(Common.LS_ID);
+      LSSupervisorId lsSupervisorId =
+          (LSSupervisorId) localState.get(Common.LS_ID);
+      String currId = lsSupervisorId.get_supervisor_id();
+
       if (currId == null) {
         currId = SupervisorUtils.generateSupervisorId();
       }
-      localState.put(Common.LS_ID, currId);
+      localState.put(Common.LS_ID, new LSSupervisorId(currId));
       idAtom.reset(currId);
     } catch (IOException e) {
       LOG.error(e.getMessage(), e);
@@ -84,6 +88,7 @@ public class StandaloneSupervisor implements ISupervisor {
     Set<Integer> ports = new HashSet<Integer>();
     try {
       ports = (Set<Integer>) localState.get(Common.LS_SLOTS);
+      //TODO fix this bug
       if (null == ports || ports.isEmpty()) {
         ports = new HashSet<Integer>();
         List<Integer> portList =
@@ -100,7 +105,6 @@ public class StandaloneSupervisor implements ISupervisor {
           ports.add(svPort);
         }
       }
-      localState.put(Common.LS_SLOTS, ports);
     } catch (IOException e1) {
       LOG.error("Error while getting new port: ", e1.getMessage());
       e1.printStackTrace();

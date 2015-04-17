@@ -41,7 +41,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import backtype.storm.ClojureClass;
+import org.apache.storm.ClojureClass;
+import org.apache.storm.util.CoreUtil;
+
 import backtype.storm.scheduler.Cluster;
 import backtype.storm.scheduler.ExecutorDetails;
 import backtype.storm.scheduler.IScheduler;
@@ -49,8 +51,6 @@ import backtype.storm.scheduler.SupervisorDetails;
 import backtype.storm.scheduler.Topologies;
 import backtype.storm.scheduler.TopologyDetails;
 import backtype.storm.scheduler.WorkerSlot;
-
-import com.tencent.jstorm.utils.ServerUtils;
 
 @ClojureClass(className = "backtype.storm.scheduler.DefaultScheduler")
 public class DefaultScheduler implements IScheduler {
@@ -61,9 +61,9 @@ public class DefaultScheduler implements IScheduler {
     for (WorkerSlot slot : slots) {
       if (!cluster.isBlackListed(slot.getNodeId())) {
         SupervisorDetails sd = cluster.getSupervisorById(slot.getNodeId());
-        if(null != sd){
-          Set<Integer>  ap = sd.getAllPorts();
-          if(null != ap && ap.contains(slot.getPort())){
+        if (null != sd) {
+          Set<Integer> ap = sd.getAllPorts();
+          if (null != ap && ap.contains(slot.getPort())) {
             result.add(slot);
           }
         }
@@ -78,7 +78,7 @@ public class DefaultScheduler implements IScheduler {
       int numWorkers) {
     if (numWorkers != 0) {
       Map<Integer, Integer> distribution =
-          ServerUtils.integerDivided(numExecutors, numWorkers);
+          CoreUtil.integerDivided(numExecutors, numWorkers);
       Map<WorkerSlot, List<ExecutorDetails>> result =
           new HashMap<WorkerSlot, List<ExecutorDetails>>();
       for (Entry<WorkerSlot, List<ExecutorDetails>> entry : existingSlots

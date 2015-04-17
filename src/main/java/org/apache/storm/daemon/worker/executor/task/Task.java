@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.storm.ClojureClass;
+import org.apache.storm.daemon.common.Common;
 import org.apache.storm.daemon.worker.executor.ExecutorData;
 
 import backtype.storm.Config;

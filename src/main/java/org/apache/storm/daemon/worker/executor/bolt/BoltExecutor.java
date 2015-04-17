@@ -43,6 +43,7 @@ import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
 import backtype.storm.Constants;
+import backtype.storm.ICredentialsListener;
 import backtype.storm.hooks.info.BoltExecuteInfo;
 import backtype.storm.serialization.KryoTupleDeserializer;
 import backtype.storm.task.IBolt;

@@ -19,12 +19,13 @@ package org.apache.storm.daemon.worker.executor;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import backtype.storm.ClojureClass;
+import org.apache.storm.ClojureClass;
+import org.apache.storm.daemon.worker.executor.tuple.TuplePair;
+
 import backtype.storm.tuple.TupleImpl;
 import backtype.storm.utils.DisruptorQueue;
 
 import com.lmax.disruptor.InsufficientCapacityException;
-import com.tencent.jstorm.tuple.TuplePair;
 
 /**
  * 

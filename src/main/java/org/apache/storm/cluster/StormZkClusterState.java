@@ -45,11 +45,10 @@ import org.slf4j.LoggerFactory;
 import backtype.storm.generated.Credentials;
 import backtype.storm.generated.ErrorInfo;
 import backtype.storm.generated.ExecutorInfo;
+import backtype.storm.generated.NodeInfo;
 import backtype.storm.generated.StormBase;
 import backtype.storm.scheduler.WorkerSlot;
 import backtype.storm.utils.Utils;
-
-import com.sun.org.apache.xalan.internal.lib.NodeInfo;
 
 /**
  * 

@@ -22,21 +22,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.storm.ClojureClass;
+import org.apache.storm.cluster.StormClusterState;
+import org.apache.storm.daemon.worker.WorkerData;
+import org.apache.storm.daemon.worker.executor.ExecutorShutdown;
+import org.apache.storm.daemon.worker.executor.UptimeComputer;
+import org.apache.storm.daemon.worker.stats.StatsData;
+import org.apache.storm.util.CoreUtil;
+import org.apache.storm.util.thread.RunnableCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.ClojureClass;
 import backtype.storm.Config;
 import backtype.storm.generated.ExecutorInfo;
 import backtype.storm.utils.MutableLong;
-
-import com.tencent.jstorm.cluster.StormClusterState;
-import com.tencent.jstorm.daemon.executor.ExecutorShutdown;
-import com.tencent.jstorm.daemon.executor.UptimeComputer;
-import com.tencent.jstorm.daemon.worker.WorkerData;
-import com.tencent.jstorm.stats.StatsData;
-import com.tencent.jstorm.utils.ServerUtils;
-import com.tencent.jstorm.utils.thread.RunnableCallback;
 
 public class WorkerHeartbeatRunable extends RunnableCallback {
   private static final long serialVersionUID = 1L;
@@ -63,8 +62,8 @@ public class WorkerHeartbeatRunable extends RunnableCallback {
     this.port = workerData.getPort();
     this.stormConf = workerData.getStormConf();
     this.frequence =
-        ServerUtils.parseInt(
-            stormConf.get(Config.TASK_HEARTBEAT_FREQUENCY_SECS), 3);
+        CoreUtil.parseInt(stormConf.get(Config.TASK_HEARTBEAT_FREQUENCY_SECS),
+            3);
     this.uptime = workerData.getUptime();
     this.active = workerData.getStormActiveAtom();
     this.retryCount = new MutableLong(0);
@@ -82,7 +81,7 @@ public class WorkerHeartbeatRunable extends RunnableCallback {
     for (ExecutorShutdown executor : executors) {
       stats.put(executor.get_executor_id(), executor.render_stats());
     }
-    Integer currtime = ServerUtils.current_time_secs();
+    Integer currtime = CoreUtil.current_time_secs();
     WorkerHeartbeats zkHb =
         new WorkerHeartbeats(stormId, stats, uptime.uptime(), currtime);
     try {
@@ -109,7 +108,7 @@ public class WorkerHeartbeatRunable extends RunnableCallback {
   public Exception error() {
     if (null != exception) {
       LOG.error("Worker Local Heartbeat exception: {}",
-          ServerUtils.stringifyError(exception));
+          CoreUtil.stringifyError(exception));
     }
     return exception;
   }

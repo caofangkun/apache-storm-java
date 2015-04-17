@@ -28,15 +28,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import backtype.storm.ClojureClass;
+import org.apache.storm.ClojureClass;
+import org.apache.storm.util.CoreUtil;
+
 import backtype.storm.scheduler.Cluster;
 import backtype.storm.scheduler.ExecutorDetails;
 import backtype.storm.scheduler.SchedulerAssignment;
 import backtype.storm.scheduler.SchedulerAssignmentImpl;
 import backtype.storm.scheduler.SupervisorDetails;
 import backtype.storm.scheduler.WorkerSlot;
-
-import com.tencent.jstorm.utils.ServerUtils;
 
 public class SchedulerUtils {
   public static Map<ExecutorDetails, WorkerSlot> assignExecutor2Worker(
@@ -100,7 +100,7 @@ public class SchedulerUtils {
         Set<Integer> allPorts = (Set<Integer>) sd.getMeta();
 
         Set<Integer> deadPorts =
-            ServerUtils.set_difference(allPorts, alivePorts);
+            CoreUtil.set_difference(allPorts, alivePorts);
         if (null != deadPorts && deadPorts.size() > 0) {
           for (Integer dp : deadPorts) {
             deadSlots.add(new WorkerSlot(entry.getKey(), dp));

@@ -17,7 +17,8 @@
  */
 package org.apache.storm.daemon.worker.executor;
 
-import backtype.storm.ClojureClass;
+import org.apache.storm.ClojureClass;
+
 import backtype.storm.generated.ExecutorInfo;
 
 /**

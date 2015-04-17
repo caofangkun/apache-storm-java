@@ -19,12 +19,12 @@ package org.apache.storm.daemon.worker.executor.spout;
 
 import java.util.Map;
 
-import backtype.storm.ClojureClass;
-import backtype.storm.utils.RotatingMap;
+import org.apache.storm.ClojureClass;
+import org.apache.storm.daemon.worker.executor.ExecutorData;
+import org.apache.storm.daemon.worker.executor.task.TaskData;
+import org.apache.storm.util.CoreUtil;
 
-import com.tencent.jstorm.daemon.executor.ExecutorData;
-import com.tencent.jstorm.daemon.task.TaskData;
-import com.tencent.jstorm.utils.ServerUtils;
+import backtype.storm.utils.RotatingMap;
 
 /**
  * 
@@ -57,7 +57,7 @@ public class SpoutExpiredCallback<K, V> implements
     Long startTimeMs = tupleInfo.getTimestamp();
     Long timeDelta = null;
     if (startTimeMs != null) {
-      timeDelta = ServerUtils.time_delta_ms(startTimeMs);
+      timeDelta = CoreUtil.time_delta_ms(startTimeMs);
     }
     FailSpoutMsg fsm =
         new FailSpoutMsg(executorData, taskDatas.get(taskId), spoutId,

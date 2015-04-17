@@ -22,18 +22,17 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.storm.ClojureClass;
+import org.apache.storm.cluster.StormClusterState;
+import org.apache.storm.daemon.common.DaemonCommon;
+import org.apache.storm.daemon.supervisor.event.EventManager;
+import org.apache.storm.http.HttpServer;
+import org.apache.storm.util.CoreUtil;
+import org.apache.storm.util.thread.AsyncLoopThread;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.ClojureClass;
 import backtype.storm.daemon.Shutdownable;
-
-import com.tencent.jstorm.cluster.StormClusterState;
-import com.tencent.jstorm.daemon.common.DaemonCommon;
-import com.tencent.jstorm.event.EventManager;
-import com.tencent.jstorm.http.HttpServer;
-import com.tencent.jstorm.utils.ServerUtils;
-import com.tencent.jstorm.utils.thread.AsyncLoopThread;
 
 @ClojureClass(className = "backtype.storm.daemon.supervisor#mk-supervisor")
 public class SupervisorManager extends ShutdownWork implements Shutdownable,
@@ -85,7 +84,7 @@ public class SupervisorManager extends ShutdownWork implements Shutdownable,
         LOG.info("Shutting down LogViewer Server ");
       } catch (Exception e) {
         LOG.warn("Failed to shut down LogViewer Server for "
-            + ServerUtils.stringifyError(e));
+            + CoreUtil.stringifyError(e));
       }
     }
 

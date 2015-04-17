@@ -23,10 +23,24 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import org.apache.storm.ClojureClass;
+import org.apache.storm.counter.Counters;
+import org.apache.storm.counter.TaskCounter;
+import org.apache.storm.daemon.acker.AckerBolt;
+import org.apache.storm.daemon.common.Common;
+import org.apache.storm.daemon.worker.executor.ExecutorData;
+import org.apache.storm.daemon.worker.executor.ExecutorTransferFn;
+import org.apache.storm.daemon.worker.executor.error.ITaskReportErr;
+import org.apache.storm.daemon.worker.executor.task.TaskData;
+import org.apache.storm.daemon.worker.executor.task.TaskUtils;
+import org.apache.storm.daemon.worker.executor.task.TasksFn;
+import org.apache.storm.daemon.worker.executor.tuple.TuplePair;
+import org.apache.storm.guava.collect.Lists;
+import org.apache.storm.util.CoreUtil;
+import org.apache.storm.util.EvenSampler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.ClojureClass;
 import backtype.storm.Config;
 import backtype.storm.spout.ISpoutOutputCollector;
 import backtype.storm.task.WorkerTopologyContext;
@@ -36,21 +50,7 @@ import backtype.storm.utils.MutableLong;
 import backtype.storm.utils.RotatingMap;
 import backtype.storm.utils.Utils;
 
-import com.google.common.collect.Lists;
 import com.lmax.disruptor.InsufficientCapacityException;
-import com.tencent.jstorm.counter.Counters;
-import com.tencent.jstorm.counter.TaskCounter;
-import com.tencent.jstorm.daemon.acker.AckerBolt;
-import com.tencent.jstorm.daemon.common.Common;
-import com.tencent.jstorm.daemon.executor.ExecutorData;
-import com.tencent.jstorm.daemon.executor.ExecutorTransferFn;
-import com.tencent.jstorm.daemon.executor.error.ITaskReportErr;
-import com.tencent.jstorm.daemon.task.TaskData;
-import com.tencent.jstorm.daemon.task.TaskUtils;
-import com.tencent.jstorm.daemon.task.TasksFn;
-import com.tencent.jstorm.tuple.TuplePair;
-import com.tencent.jstorm.utils.EvenSampler;
-import com.tencent.jstorm.utils.ServerUtils;
 
 public class SpoutCollector implements ISpoutOutputCollector {
   private static Logger LOG = LoggerFactory.getLogger(SpoutCollector.class);
@@ -93,7 +93,7 @@ public class SpoutCollector implements ISpoutOutputCollector {
     this.rand = new Random(Utils.secureRandomLong());
     this.report_error = executorData.getReportError();
     this.isDebug =
-        ServerUtils.parseBoolean(stormConf.get(Config.TOPOLOGY_DEBUG), false);
+        CoreUtil.parseBoolean(stormConf.get(Config.TOPOLOGY_DEBUG), false);
     this.overflowBuffer = overflowBuffer;
     this.sampler = executorData.getSampler();
   }
@@ -176,7 +176,7 @@ public class SpoutCollector implements ISpoutOutputCollector {
       pending.put(rootId, info);
 
       List<Object> ackerTuple =
-          Lists.newArrayList((Object) rootId, ServerUtils.bit_xor_vals(outIds),
+          Lists.newArrayList((Object) rootId, CoreUtil.bit_xor_vals(outIds),
               taskId);
       try {
         TaskUtils.sendUnanchored(taskData, AckerBolt.ACKER_INIT_STREAM_ID,
@@ -193,7 +193,8 @@ public class SpoutCollector implements ISpoutOutputCollector {
         timeDelta = 0L;
       }
       AckSpoutMsg ack =
-          new AckSpoutMsg(executorData, taskData, messageId, info, timeDelta, 0L);
+          new AckSpoutMsg(executorData, taskData, messageId, info, timeDelta,
+              0L);
       ack.run();
     }
     return outTasks;

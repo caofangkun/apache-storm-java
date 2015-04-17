@@ -46,10 +46,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import org.apache.storm.ClojureClass;
+import org.apache.storm.util.CoreUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.ClojureClass;
 import backtype.storm.Config;
 import backtype.storm.scheduler.Cluster;
 import backtype.storm.scheduler.ExecutorDetails;
@@ -58,8 +59,6 @@ import backtype.storm.scheduler.SchedulerAssignment;
 import backtype.storm.scheduler.Topologies;
 import backtype.storm.scheduler.TopologyDetails;
 import backtype.storm.scheduler.WorkerSlot;
-
-import com.tencent.jstorm.utils.ServerUtils;
 
 @ClojureClass(className = "backtype.storm.scheduler.IsolationScheduler")
 public class IsolationScheduler implements IScheduler {
@@ -239,7 +238,7 @@ public class IsolationScheduler implements IScheduler {
     for (SchedulerAssignment sa : assignmentValues) {
       Map<ExecutorDetails, WorkerSlot> executorSlots = sa.getExecutorToSlot();
       Map<WorkerSlot, List<ExecutorDetails>> slotExecutors =
-          ServerUtils.reverse_map(executorSlots);
+          CoreUtil.reverse_map(executorSlots);
       Set<Map.Entry<WorkerSlot, List<ExecutorDetails>>> entries =
           slotExecutors.entrySet();
       for (Map.Entry<WorkerSlot, List<ExecutorDetails>> entry : entries) {
@@ -273,7 +272,7 @@ public class IsolationScheduler implements IScheduler {
     Map<ExecutorDetails, String> executorComp =
         details.getExecutorToComponent();
     Map<String, List<ExecutorDetails>> compExecutors =
-        ServerUtils.reverse_map(executorComp);
+        CoreUtil.reverse_map(executorComp);
 
     List<ExecutorDetails> allExecutors = new ArrayList<ExecutorDetails>();
     Collection<List<ExecutorDetails>> values = compExecutors.values();
@@ -320,12 +319,12 @@ public class IsolationScheduler implements IScheduler {
     if (null != machineConf) {
       @SuppressWarnings("rawtypes")
       int machineNum =
-          ServerUtils.parseInt(((Map) machineConf).get(topology.getName()), 0);
+          CoreUtil.parseInt(((Map) machineConf).get(topology.getName()), 0);
 
       if (machineNum > 0) {
         int workerNum = topology.getNumWorkers();
         TreeMap<Integer, Integer> distribution =
-            ServerUtils.integerDivided(workerNum, machineNum);
+            CoreUtil.integerDivided(workerNum, machineNum);
 
         if (distribution.containsKey(0)) {
           distribution.remove(0);

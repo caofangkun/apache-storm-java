@@ -19,22 +19,20 @@ package org.apache.storm.daemon.worker.executor.spout;
 
 import java.util.Map;
 
+import org.apache.storm.ClojureClass;
+import org.apache.storm.daemon.worker.executor.ExecutorData;
+import org.apache.storm.daemon.worker.executor.task.TaskData;
+import org.apache.storm.daemon.worker.executor.task.TaskUtils;
+import org.apache.storm.daemon.worker.stats.CommonStats;
+import org.apache.storm.daemon.worker.stats.SpoutExecutorStats;
+import org.apache.storm.daemon.worker.stats.Stats;
+import org.apache.storm.util.CoreUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.ClojureClass;
 import backtype.storm.Config;
 import backtype.storm.hooks.info.SpoutAckInfo;
 import backtype.storm.spout.ISpout;
-
-import com.tencent.jstorm.daemon.builtinMetrics.BuiltinMetrics;
-import com.tencent.jstorm.daemon.executor.ExecutorData;
-import com.tencent.jstorm.daemon.task.TaskData;
-import com.tencent.jstorm.daemon.task.TaskUtils;
-import com.tencent.jstorm.stats.CommonStats;
-import com.tencent.jstorm.stats.SpoutExecutorStats;
-import com.tencent.jstorm.stats.Stats;
-import com.tencent.jstorm.utils.ServerUtils;
 
 @ClojureClass(className = "backtype.storm.daemon.executor#ack-spout-msg")
 public class AckSpoutMsg implements Runnable {
@@ -64,7 +62,7 @@ public class AckSpoutMsg implements Runnable {
     this.stream = tupleInfo.getStream();
     this.task_stats = executorData.getStats();
     this.isDebug =
-        ServerUtils.parseBoolean(stormConf.get(Config.TOPOLOGY_DEBUG), false);
+        CoreUtil.parseBoolean(stormConf.get(Config.TOPOLOGY_DEBUG), false);
   }
 
   public void run() {
