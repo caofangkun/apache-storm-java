@@ -24,17 +24,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.storm.ClojureClass;
+import org.apache.storm.daemon.common.Common;
+import org.apache.storm.util.NetWorkUtils;
+import org.apache.thrift7.TBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.ClojureClass;
 import backtype.storm.Config;
 import backtype.storm.scheduler.ISupervisor;
 import backtype.storm.utils.LocalState;
 import clojure.lang.Atom;
-
-import com.tencent.jstorm.daemon.common.Common;
-import com.tencent.jstorm.utils.NetWorkUtils;
 
 @ClojureClass(className = "backtype.storm.daemon.supervisor#standalone-supervisor")
 public class StandaloneSupervisor implements ISupervisor {

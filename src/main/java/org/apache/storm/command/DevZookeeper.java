@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.apache.storm.ClojureClass;
 import org.apache.storm.util.CoreUtil;
+import org.apache.storm.zk.InprocessZookeeper;
 
 import backtype.storm.Config;
 import backtype.storm.utils.Utils;
@@ -35,13 +36,14 @@ import backtype.storm.utils.Utils;
 @ClojureClass(className = "backtype.storm.command.dev-zookeeper")
 public class DevZookeeper {
 
+  @SuppressWarnings("rawtypes")
   public static void main(String[] args) throws IOException,
       InterruptedException {
 
     Map conf = Utils.readStormConfig();
     String localpath =
-        CoreUtil.parseString(conf.get(Config.DEV_ZOOKEEPER_PATH),
-            "storm-local");
+        CoreUtil
+            .parseString(conf.get(Config.DEV_ZOOKEEPER_PATH), "storm-local");
 
     CoreUtil.rmr(localpath);
     (new InprocessZookeeper(conf)).start();

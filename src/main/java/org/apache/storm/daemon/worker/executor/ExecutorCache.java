@@ -20,6 +20,7 @@ package org.apache.storm.daemon.worker.executor;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.storm.ClojureClass;
+import org.apache.storm.daemon.worker.executor.heartbeat.ExecutorHeartbeat;
 
 /**
  * 

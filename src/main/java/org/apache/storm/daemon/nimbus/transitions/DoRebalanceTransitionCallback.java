@@ -17,12 +17,12 @@
  */
 package org.apache.storm.daemon.nimbus.transitions;
 
+import org.apache.storm.daemon.nimbus.NimbusData;
+import org.apache.storm.daemon.nimbus.NimbusUtils;
+import org.apache.storm.util.thread.BaseCallback;
+
 import backtype.storm.generated.StormBase;
 import backtype.storm.generated.TopologyStatus;
-
-import com.tencent.jstorm.daemon.nimbus.NimbusData;
-import com.tencent.jstorm.daemon.nimbus.NimbusUtils;
-import com.tencent.jstorm.utils.thread.BaseCallback;
 
 public class DoRebalanceTransitionCallback extends BaseCallback {
 

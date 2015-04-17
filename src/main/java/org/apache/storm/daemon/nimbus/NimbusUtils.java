@@ -38,11 +38,17 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.ClojureClass;
 import org.apache.storm.cluster.StormClusterState;
+import org.apache.storm.config.ConfigUtil;
 import org.apache.storm.daemon.common.Assignment;
 import org.apache.storm.daemon.common.Common;
 import org.apache.storm.daemon.common.SupervisorInfo;
+import org.apache.storm.daemon.nimbus.threads.OlderFileFilter;
+import org.apache.storm.daemon.nimbus.transitions.StatusType;
 import org.apache.storm.daemon.worker.executor.ExecutorCache;
-import org.apache.storm.http.auth.Credentials;
+import org.apache.storm.daemon.worker.executor.heartbeat.ExecutorHeartbeat;
+import org.apache.storm.daemon.worker.stats.StatsData;
+import org.apache.storm.util.CoreUtil;
+import org.apache.storm.util.ReflectionUtils;
 import org.apache.storm.util.thread.RunnableCallback;
 import org.apache.storm.zookeeper.ZooDefs;
 import org.apache.storm.zookeeper.data.ACL;
@@ -50,21 +56,25 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
-import backtype.storm.daemon.common.StormBase;
 import backtype.storm.generated.AlreadyAliveException;
+import backtype.storm.generated.AuthorizationException;
 import backtype.storm.generated.Bolt;
 import backtype.storm.generated.ComponentCommon;
+import backtype.storm.generated.Credentials;
 import backtype.storm.generated.ErrorInfo;
 import backtype.storm.generated.ExecutorInfo;
 import backtype.storm.generated.ExecutorSummary;
 import backtype.storm.generated.InvalidTopologyException;
 import backtype.storm.generated.NotAliveException;
+import backtype.storm.generated.NumErrorsChoice;
 import backtype.storm.generated.RebalanceOptions;
 import backtype.storm.generated.SpoutSpec;
 import backtype.storm.generated.StateSpoutSpec;
+import backtype.storm.generated.StormBase;
 import backtype.storm.generated.StormTopology;
 import backtype.storm.generated.SupervisorSummary;
 import backtype.storm.generated.TopologyInitialStatus;
+import backtype.storm.generated.TopologyStatus;
 import backtype.storm.generated.TopologySummary;
 import backtype.storm.nimbus.DefaultTopologyValidator;
 import backtype.storm.nimbus.ITopologyValidator;
@@ -79,6 +89,7 @@ import backtype.storm.scheduler.Topologies;
 import backtype.storm.scheduler.TopologyDetails;
 import backtype.storm.scheduler.WorkerSlot;
 import backtype.storm.security.auth.IAuthorizer;
+import backtype.storm.security.auth.ICredentialsRenewer;
 import backtype.storm.security.auth.ReqContext;
 import backtype.storm.utils.ThriftTopologyUtils;
 import backtype.storm.utils.Utils;
@@ -128,7 +139,7 @@ public class NimbusUtils {
       if (json == null) {
         continue;
       }
-      Map mtmp = (Map) ServerUtils.from_json(json);
+      Map mtmp = (Map) CoreUtil.from_json(json);
       if (mtmp == null) {
         StringBuilder sb = new StringBuilder();
         sb.append("Failed to deserilaize " + componentId);
@@ -142,14 +153,14 @@ public class NimbusUtils {
         LOG.info("topology:" + stormConf.get(Config.TOPOLOGY_NAME)
             + ", componentId:" + componentId + ", TOPOLOGY_KRYO_REGISTER"
             + componentKryoRegister.getClass().getName());
-        ServerUtils.mergeList(kryoRegisterList, componentKryoRegister);
+        CoreUtil.mergeList(kryoRegisterList, componentKryoRegister);
       }
       Object componentDecorator = mtmp.get(Config.TOPOLOGY_KRYO_DECORATORS);
       if (componentDecorator != null) {
         LOG.info("topology:" + stormConf.get(Config.TOPOLOGY_NAME)
             + ", componentId:" + componentId + ", TOPOLOGY_KRYO_DECORATOR"
             + componentDecorator.getClass().getName());
-        ServerUtils.mergeList(kryoDecoratorList, componentDecorator);
+        CoreUtil.mergeList(kryoDecoratorList, componentDecorator);
       }
     }
 
@@ -166,17 +177,17 @@ public class NimbusUtils {
     if (totalRegister != null) {
       LOG.info("topology:" + stormConf.get(Config.TOPOLOGY_NAME)
           + ", TOPOLOGY_KRYO_REGISTER" + totalRegister.getClass().getName());
-      ServerUtils.mergeList(kryoRegisterList, totalRegister);
+      CoreUtil.mergeList(kryoRegisterList, totalRegister);
     }
     Object totalDecorator = totalConf.get(Config.TOPOLOGY_KRYO_DECORATORS);
     if (totalDecorator != null) {
       LOG.info("topology:" + stormConf.get(Config.TOPOLOGY_NAME)
           + ", TOPOLOGY_KRYO_DECORATOR" + totalDecorator.getClass().getName());
-      ServerUtils.mergeList(kryoDecoratorList, totalDecorator);
+      CoreUtil.mergeList(kryoDecoratorList, totalDecorator);
     }
 
     Map kryoRegisterMap = mapifySerializations(kryoRegisterList);
-    List decoratorList = ServerUtils.distinctList(kryoDecoratorList);
+    List decoratorList = CoreUtil.distinctList(kryoDecoratorList);
     Map rtn = new HashMap();
     rtn.putAll(stormConf);
     rtn.put(Config.TOPOLOGY_KRYO_DECORATORS, decoratorList);
@@ -196,13 +207,13 @@ public class NimbusUtils {
     mergeMap.putAll(stormConf);
     String jsonConfString = component.get_json_conf();
     if (jsonConfString != null) {
-      Map componentMap = (Map) ServerUtils.from_json(jsonConfString);
+      Map componentMap = (Map) CoreUtil.from_json(jsonConfString);
       mergeMap.putAll(componentMap);
     }
     Integer taskNum = null;
     Object taskNumObject = mergeMap.get(Config.TOPOLOGY_TASKS);
     if (taskNumObject != null) {
-      taskNum = ServerUtils.parseInt(taskNumObject);
+      taskNum = CoreUtil.parseInt(taskNumObject);
     } else {
       taskNum =
           component.is_set_parallelism_hint() ? component
@@ -213,7 +224,7 @@ public class NimbusUtils {
     if (maxParallelismObject == null) {
       return taskNum;
     } else {
-      int maxParallelism = ServerUtils.parseInt(maxParallelismObject);
+      int maxParallelism = CoreUtil.parseInt(maxParallelismObject);
       return Math.min(maxParallelism, taskNum);
     }
   }
@@ -247,12 +258,12 @@ public class NimbusUtils {
       Map componentConf = new HashMap();
       String jsonConfString = common.get_json_conf();
       if (jsonConfString != null) {
-        componentConf.putAll((Map) ServerUtils.from_json(jsonConfString));
+        componentConf.putAll((Map) CoreUtil.from_json(jsonConfString));
       }
       Integer taskNum = componentParallelism(stormConf, common);
       componentConf.put(Config.TOPOLOGY_TASKS, taskNum);
 
-      common.set_json_conf(ServerUtils.to_json(componentConf));
+      common.set_json_conf(CoreUtil.to_json(componentConf));
     }
     return ret;
   }
@@ -260,8 +271,8 @@ public class NimbusUtils {
   @SuppressWarnings({ "unchecked", "rawtypes" })
   @ClojureClass(className = "backtype.storm.daemon.nimbus#code-ids")
   public static Set<String> codeIds(Map conf) throws IOException {
-    String masterStormdistRoot = ConfigUtils.masterStormdistRoot(conf);
-    return ServerUtils.readDirContents(masterStormdistRoot);
+    String masterStormdistRoot = ConfigUtil.masterStormdistRoot(conf);
+    return CoreUtil.readDirContents(masterStormdistRoot);
   }
 
   @SuppressWarnings("rawtypes")
@@ -310,12 +321,12 @@ public class NimbusUtils {
       clusterState.teardownTopologyErrors(id);
 
       String masterStormdistRoot =
-          ConfigUtils.masterStormdistRoot(data.getConf(), id);
+          ConfigUtil.masterStormdistRoot(data.getConf(), id);
       try {
-        ServerUtils.rmr(masterStormdistRoot);
+        CoreUtil.rmr(masterStormdistRoot);
       } catch (IOException e) {
         LOG.error("[cleanup for" + id + " ]Failed to delete "
-            + masterStormdistRoot + ",", ServerUtils.stringifyError(e));
+            + masterStormdistRoot + ",", CoreUtil.stringifyError(e));
       }
 
       data.getExecutorHeartbeatsCache().remove(id);
@@ -495,7 +506,7 @@ public class NimbusUtils {
         LOG.warn("Assignment of " + id + " is NULL!");
         topoSumm =
             new TopologySummary(id, base.get_name(), 0, 0, 0,
-                ServerUtils.timeDelta(base.get_launch_time_secs()),
+                CoreUtil.timeDelta(base.get_launch_time_secs()),
                 NimbusUtils.extractStatusStr(base));
       } else {
         Map<ExecutorInfo, WorkerSlot> executorToNodePort =
@@ -518,7 +529,7 @@ public class NimbusUtils {
         Integer numWorkers = workerSlots.size();
         topoSumm =
             new TopologySummary(id, base.get_name(), numTasks, numExecutors,
-                numWorkers, ServerUtils.timeDelta(base.get_launch_time_secs()),
+                numWorkers, CoreUtil.timeDelta(base.get_launch_time_secs()),
                 NimbusUtils.extractStatusStr(base));
         String owner = base.get_owner();
         if (owner != null) {
@@ -617,7 +628,7 @@ public class NimbusUtils {
         String componentId = taskToComponent.get(executor.get_task_start());
         ExecutorSummary executorSummary =
             new ExecutorSummary(executor, componentId, host, port,
-                ServerUtils.parseInt(heartbeat.getUptime(), 0));
+                CoreUtil.parseInt(heartbeat.getUptime(), 0));
         executorSummary.set_stats(stats.getExecutorStats());
         taskSummaries.add(executorSummary);
       }
@@ -629,9 +640,9 @@ public class NimbusUtils {
   @ClojureClass(className = "backtype.storm.daemon.nimbus#read-storm-conf")
   public static Map readStormConf(Map conf, String stormId) throws Exception {
     Map<String, Object> ret = new HashMap<String, Object>(conf);
-    String stormRoot = ConfigUtils.masterStormdistRoot(conf, stormId);
+    String stormRoot = ConfigUtil.masterStormdistRoot(conf, stormId);
     ret.putAll(Utils.javaDeserialize(FileUtils.readFileToByteArray(new File(
-        ConfigUtils.masterStormconfPath(stormRoot))), Map.class));
+        ConfigUtil.masterStormconfPath(stormRoot))), Map.class));
     return ret;
   }
 
@@ -668,7 +679,7 @@ public class NimbusUtils {
     LOG.debug("check file access:" + filePath);
 
     try {
-      if (new File(ConfigUtils.masterStormdistRoot(conf)).getCanonicalFile() != new File(
+      if (new File(ConfigUtil.masterStormdistRoot(conf)).getCanonicalFile() != new File(
           filePath).getCanonicalFile().getParentFile().getParentFile()) {
         throw new AuthorizationException("Invalid file path: " + filePath);
       }
@@ -768,7 +779,7 @@ public class NimbusUtils {
     Map<Integer, String> taskIdToComponent =
         Common.stormTaskInfo(topology, topologyConf);
     Map<String, List<Integer>> componentToTaskIds =
-        ServerUtils.reverse_map(taskIdToComponent);
+        CoreUtil.reverse_map(taskIdToComponent);
 
     for (Entry<String, List<Integer>> entry : componentToTaskIds.entrySet()) {
       List<Integer> taskIds = entry.getValue();
@@ -799,7 +810,7 @@ public class NimbusUtils {
           componentIdToExecutorNumsToTaskids.get(componentId);
       for (Integer count : executorNumToTaskIds.keySet()) {
         List<List<Integer>> partitionedList =
-            ServerUtils.partitionFixed(count.intValue(),
+            CoreUtil.partitionFixed(count.intValue(),
                 executorNumToTaskIds.get(count));
         if (partitionedList != null) {
           ret.addAll(partitionedList);
@@ -927,13 +938,13 @@ public class NimbusUtils {
     }
     int nimbusTime;
     if (lastNimbusTime == 0 || lastReportedTime != newReportedTime) {
-      nimbusTime = ServerUtils.current_time_secs();
+      nimbusTime = CoreUtil.current_time_secs();
     } else {
       nimbusTime = lastNimbusTime;
     }
     //
     boolean isTimeOut =
-        (0 != nimbusTime && ServerUtils.timeDelta(nimbusTime) >= nimTaskTimeOutSecs);
+        (0 != nimbusTime && CoreUtil.timeDelta(nimbusTime) >= nimTaskTimeOutSecs);
 
     return new ExecutorCache(isTimeOut, nimbusTime, newReportedTime, hb);
   }
@@ -983,7 +994,7 @@ public class NimbusUtils {
 
     Map conf = nimbus.getConf();
     int taskTimeOutSecs =
-        ServerUtils.parseInt(conf.get(Config.NIMBUS_TASK_TIMEOUT_SECS), 30);
+        CoreUtil.parseInt(conf.get(Config.NIMBUS_TASK_TIMEOUT_SECS), 30);
     Map<ExecutorInfo, ExecutorCache> newCache =
         updateHeartbeatCache(cache, executorBeats, allExecutors,
             taskTimeOutSecs);
@@ -1035,12 +1046,12 @@ public class NimbusUtils {
     Map<ExecutorInfo, ExecutorCache> heartbeatsCache =
         nimbus.getExecutorHeartbeatsCache().get(stormId);
     int taskLaunchSecs =
-        ServerUtils.parseInt(conf.get(Config.NIMBUS_TASK_LAUNCH_SECS), 30);
+        CoreUtil.parseInt(conf.get(Config.NIMBUS_TASK_LAUNCH_SECS), 30);
 
     for (ExecutorInfo executor : allExecutors) {
       Integer startTime = executorStartTimes.get(executor);
       boolean isTaskLaunchNotTimeOut =
-          ServerUtils.timeDelta(null != startTime ? startTime : 0) < taskLaunchSecs;
+          CoreUtil.timeDelta(null != startTime ? startTime : 0) < taskLaunchSecs;
       //
       boolean isExeTimeOut = heartbeatsCache.get(executor).isTimedOut();
 
@@ -1119,7 +1130,7 @@ public class NimbusUtils {
       Set<ExecutorInfo> allExecutors = topologyToExecutors.get(tid);
       Set<ExecutorInfo> aliveExecutors = topologyToAliveExecutors.get(tid);
       Set<ExecutorInfo> deadExecutors =
-          ServerUtils.set_difference(allExecutors, aliveExecutors);
+          CoreUtil.set_difference(allExecutors, aliveExecutors);
 
       Map<ExecutorInfo, WorkerSlot> allExecutorToNodeport =
           assignment.getExecutorToNodeport();
@@ -1434,10 +1445,10 @@ public class NimbusUtils {
       Map<ExecutorInfo, WorkerSlot> newExecutorToNodeport) {
     // slot-assigned
     Map<WorkerSlot, List<ExecutorInfo>> slotAssigned =
-        ServerUtils.reverse_map(executorToNodeport);
+        CoreUtil.reverse_map(executorToNodeport);
     // new-slot-assigned
     Map<WorkerSlot, List<ExecutorInfo>> newSlotAssigned =
-        ServerUtils.reverse_map(newExecutorToNodeport);
+        CoreUtil.reverse_map(newExecutorToNodeport);
     // brand-new-slots
     // Attenion! DO NOT USE Utils.map_diff
     Map<WorkerSlot, List<ExecutorInfo>> brandNewSlots =
@@ -1491,8 +1502,7 @@ public class NimbusUtils {
     Set<WorkerSlot> newSlots =
         new HashSet<WorkerSlot>(newAssignment.getExecutorToNodeport().values());
 
-    Set<WorkerSlot> newlyAddded =
-        ServerUtils.set_difference(newSlots, oldSlots);
+    Set<WorkerSlot> newlyAddded = CoreUtil.set_difference(newSlots, oldSlots);
     return newlyAddded;
   }
 
@@ -1557,7 +1567,7 @@ public class NimbusUtils {
         computeNewTopologyToExecutorToNodeport(nimbusData, existingAssignments,
             topologies, scratchTopologyID);
 
-    int nowSecs = ServerUtils.current_time_secs();
+    int nowSecs = CoreUtil.current_time_secs();
 
     Map<String, SupervisorDetails> basicSupervisorDetailsMap =
         basicSupervisorDetailsMap(stormClusterState);
@@ -1700,9 +1710,9 @@ public class NimbusUtils {
         startTimes.put(ressignEntry.getKey(), ressignEntry.getValue());
       }
 
-      String codeDir = ConfigUtils.masterStormdistRoot(conf, topologyId);
+      String codeDir = ConfigUtil.masterStormdistRoot(conf, topologyId);
       Map<String, String> nodeHost =
-          ServerUtils.select_keys(allNodeToHost, allNodes);
+          CoreUtil.select_keys(allNodeToHost, allNodes);
 
       Assignment newAssignment =
           new Assignment(codeDir, executorInfoToNodeport, nodeHost, startTimes);
@@ -1793,15 +1803,15 @@ public class NimbusUtils {
   public static void setupStormCode(Map<Object, Object> conf,
       String topologyId, String tmpJarLocation, Map<Object, Object> stormConf,
       StormTopology topology) throws IOException {
-    String stormroot = ConfigUtils.masterStormdistRoot(conf, topologyId);
+    String stormroot = ConfigUtil.masterStormdistRoot(conf, topologyId);
     FileUtils.forceMkdir(new File(stormroot));
     FileUtils.cleanDirectory(new File(stormroot));
     setupJar(conf, tmpJarLocation, stormroot);
     FileUtils.writeByteArrayToFile(
-        new File(ConfigUtils.masterStormcodePath(stormroot)),
+        new File(ConfigUtil.masterStormcodePath(stormroot)),
         Utils.serialize(topology));
     FileUtils.writeByteArrayToFile(
-        new File(ConfigUtils.masterStormconfPath(stormroot)),
+        new File(ConfigUtil.masterStormconfPath(stormroot)),
         Utils.serialize(stormConf));
   }
 
@@ -1809,8 +1819,8 @@ public class NimbusUtils {
   @ClojureClass(className = "backtype.storm.daemon.nimbus#read-storm-topology")
   public static StormTopology readStormTopology(Map conf, String stormId)
       throws IOException {
-    String stormRoot = ConfigUtils.masterStormdistRoot(conf, stormId);
-    return Utils.deserialize(FileUtils.readFileToByteArray(new File(ConfigUtils
+    String stormRoot = ConfigUtil.masterStormdistRoot(conf, stormId);
+    return Utils.deserialize(FileUtils.readFileToByteArray(new File(ConfigUtil
         .masterStormcodePath(stormRoot))), StormTopology.class);
   }
 
@@ -1827,15 +1837,14 @@ public class NimbusUtils {
   public static void validateTopologySize(Map topoConf, Map nimbusConf,
       StormTopology topology) throws InvalidTopologyException {
     int workersCount =
-        ServerUtils.parseInt(topoConf.get(Config.TOPOLOGY_WORKERS), 0);
+        CoreUtil.parseInt(topoConf.get(Config.TOPOLOGY_WORKERS), 0);
     Integer workersAllowed =
-        ServerUtils.parseInt(nimbusConf.get(Config.NIMBUS_SLOTS_PER_TOPOLOGY));
+        CoreUtil.parseInt(nimbusConf.get(Config.NIMBUS_SLOTS_PER_TOPOLOGY));
     Map<String, Integer> numExecutors =
         Common.numStartExecutors(Common.allComponents(topology));
     int executorsCount = numExecutors.values().size();
     Integer executorsAllowed =
-        ServerUtils.parseInt(nimbusConf
-            .get(Config.NIMBUS_EXECUTORS_PER_TOPOLOGY));
+        CoreUtil.parseInt(nimbusConf.get(Config.NIMBUS_EXECUTORS_PER_TOPOLOGY));
 
     if (executorsAllowed != null
         && executorsCount > executorsAllowed.intValue()) {
@@ -1855,7 +1864,7 @@ public class NimbusUtils {
   @ClojureClass(className = "backtype.storm.daemon.nimbus#setup-jar")
   public static void setupJar(Map conf, String tmpJarLocation, String stormroot)
       throws IOException {
-    if (ConfigUtils.isLocalMode(conf)) {
+    if (ConfigUtil.isLocalMode(conf)) {
       setupLocalJar(conf, tmpJarLocation, stormroot);
     } else {
       setupDistributedJar(conf, tmpJarLocation, stormroot);
@@ -1879,7 +1888,7 @@ public class NimbusUtils {
       throw new IllegalArgumentException(tmpJarLocation + " to copy to "
           + stormroot + " does not exist!");
     }
-    String path = ConfigUtils.masterStormjarPath(stormroot);
+    String path = ConfigUtil.masterStormjarPath(stormroot);
     File destFile = new File(path);
     FileUtils.copyFile(srcFile, destFile);
   }
@@ -1925,13 +1934,13 @@ public class NimbusUtils {
         Common.numStartExecutors(allComponents);
 
     int numWorkers =
-        ServerUtils.parseInt(stormConf.get(Config.TOPOLOGY_WORKERS), 1);
+        CoreUtil.parseInt(stormConf.get(Config.TOPOLOGY_WORKERS), 1);
     String owner =
-        ServerUtils.parseString(stormConf.get(Config.TOPOLOGY_SUBMITTER_USER),
+        CoreUtil.parseString(stormConf.get(Config.TOPOLOGY_SUBMITTER_USER),
             "unknown");
     StormBase stormBase =
         new StormBase(stormName, topologyInitialStatus, numWorkers);
-    stormBase.set_launch_time_secs(ServerUtils.current_time_secs());
+    stormBase.set_launch_time_secs(CoreUtil.current_time_secs());
     stormBase.set_owner(owner);
     stormBase.set_component_executors(componentToExecutors);
     LOG.info("Activating {}:{}", stormName, stormId);

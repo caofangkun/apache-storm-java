@@ -41,7 +41,6 @@ import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
 import backtype.storm.Constants;
-import backtype.storm.daemon.common.StormBase;
 import backtype.storm.generated.Bolt;
 import backtype.storm.generated.ComponentCommon;
 import backtype.storm.generated.ExecutorInfo;
@@ -50,6 +49,7 @@ import backtype.storm.generated.Grouping;
 import backtype.storm.generated.InvalidTopologyException;
 import backtype.storm.generated.SpoutSpec;
 import backtype.storm.generated.StateSpoutSpec;
+import backtype.storm.generated.StormBase;
 import backtype.storm.generated.StormTopology;
 import backtype.storm.generated.StreamInfo;
 import backtype.storm.metric.MetricsConsumerBolt;
@@ -365,8 +365,7 @@ public class Common {
     Integer numExecutors =
         CoreUtil.parseInt(stormConf.get(Config.TOPOLOGY_ACKER_EXECUTORS));
     if (numExecutors == null) {
-      numExecutors =
-          CoreUtil.parseInt(stormConf.get(Config.TOPOLOGY_WORKERS));
+      numExecutors = CoreUtil.parseInt(stormConf.get(Config.TOPOLOGY_WORKERS));
     }
 
     HashMap<String, StreamInfo> outputs = new HashMap<String, StreamInfo>();

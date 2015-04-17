@@ -36,8 +36,8 @@ public class FileCacheMap<K, V> extends TimeCacheMap implements
   private final static Logger LOG = LoggerFactory.getLogger(FileCacheMap.class);
 
   public FileCacheMap(Map conf) {
-    super(CoreUtil.parseInt(
-        conf.get(Config.NIMBUS_FILE_COPY_EXPIRATION_SECS), 600));
+    super(CoreUtil.parseInt(conf.get(Config.NIMBUS_FILE_COPY_EXPIRATION_SECS),
+        600));
   }
 
   @Override

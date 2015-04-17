@@ -41,6 +41,7 @@ public class ListTopologies {
     System.out.println("    $STORM_HOME/bin/storm list");
   }
 
+  @SuppressWarnings("rawtypes")
   public static void main(String[] args) {
     NimbusClient client = null;
     try {

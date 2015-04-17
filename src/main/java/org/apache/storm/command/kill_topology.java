@@ -37,6 +37,7 @@ public class kill_topology {
     System.out.println("    $STORM_HOME/bin/storm kill topology_name");
   }
 
+  @SuppressWarnings("rawtypes")
   public static void main(String[] args) {
     if (args == null || args.length == 0) {
       System.out.println("Should privide TOPOLOGY_NAME at least!");
@@ -66,5 +67,4 @@ public class kill_topology {
       }
     }
   }
-
 }

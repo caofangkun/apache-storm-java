@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.storm.ClojureClass;
 import org.apache.storm.daemon.worker.executor.ExecutorType;
-import org.apache.storm.stats.CommonStats;
+import org.apache.storm.daemon.worker.stats.CommonStats;
 
 import backtype.storm.Config;
 import backtype.storm.messaging.IConnection;

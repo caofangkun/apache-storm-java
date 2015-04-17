@@ -17,7 +17,7 @@
  */
 package org.apache.storm.daemon.nimbus.transitions;
 
-import backtype.storm.ClojureClass;
+import org.apache.storm.ClojureClass;
 
 @ClojureClass(className = "backtype.storm.daemon.nimbus#state-transitions")
 public enum StatusType {

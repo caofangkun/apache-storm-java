@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -34,7 +33,7 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public class Counters implements Iterable<CounterGroup> {
-  private static Logger LOG = LoggerFactory.getLogger(Counters.class);
+
   private static final char GROUP_OPEN = '{';
   private static final char GROUP_CLOSE = '}';
   private static final char COUNTER_OPEN = '[';

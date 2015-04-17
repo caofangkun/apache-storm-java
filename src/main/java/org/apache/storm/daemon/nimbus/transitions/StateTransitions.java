@@ -21,16 +21,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.storm.ClojureClass;
+import org.apache.storm.daemon.nimbus.NimbusData;
+import org.apache.storm.daemon.nimbus.NimbusUtils;
+import org.apache.storm.util.thread.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.ClojureClass;
 import backtype.storm.generated.StormBase;
 import backtype.storm.generated.TopologyStatus;
-
-import com.tencent.jstorm.daemon.nimbus.NimbusData;
-import com.tencent.jstorm.daemon.nimbus.NimbusUtils;
-import com.tencent.jstorm.utils.thread.Callback;
 
 @ClojureClass(className = "backtype.storm.daemon.nimbus#state-transitions")
 public class StateTransitions {
@@ -88,7 +87,7 @@ public class StateTransitions {
       return;
     }
     TopologyStatus status = stormBase.get_status();
-    
+
     Map<TopologyStatus, Map<StatusType, Callback>> callbackMap =
         stateTransitions(stormId, status, stormBase);
 

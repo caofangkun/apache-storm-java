@@ -17,13 +17,11 @@
  */
 package org.apache.storm.daemon.nimbus.transitions;
 
+import org.apache.storm.ClojureClass;
+import org.apache.storm.daemon.nimbus.NimbusData;
+import org.apache.storm.util.thread.BaseCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import backtype.storm.ClojureClass;
-
-import com.tencent.jstorm.daemon.nimbus.NimbusData;
-import com.tencent.jstorm.utils.thread.BaseCallback;
 
 @ClojureClass(className = "backtype.storm.daemon.nimbus#state-transitions#remove")
 public class RemoveTransitionCallback extends BaseCallback {

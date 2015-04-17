@@ -19,20 +19,19 @@ package org.apache.storm.daemon.nimbus.transitions;
 
 import java.util.Map;
 
+import org.apache.storm.ClojureClass;
+import org.apache.storm.daemon.nimbus.NimbusData;
+import org.apache.storm.daemon.nimbus.NimbusUtils;
+import org.apache.storm.util.CoreUtil;
+import org.apache.storm.util.thread.BaseCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.ClojureClass;
 import backtype.storm.Config;
 import backtype.storm.generated.RebalanceOptions;
 import backtype.storm.generated.StormBase;
 import backtype.storm.generated.TopologyActionOptions;
 import backtype.storm.generated.TopologyStatus;
-
-import com.tencent.jstorm.daemon.nimbus.NimbusData;
-import com.tencent.jstorm.daemon.nimbus.NimbusUtils;
-import com.tencent.jstorm.utils.ServerUtils;
-import com.tencent.jstorm.utils.thread.BaseCallback;
 
 @ClojureClass(className = "backtype.storm.daemon.nimbus#rebalance-transition")
 public class RebalanceTransitionCallback extends BaseCallback {
@@ -63,7 +62,7 @@ public class RebalanceTransitionCallback extends BaseCallback {
       Map stormConf = NimbusUtils.readStormConf(nimbusData.getConf(), stormId);
       if (delaySecs == null) {
         delaySecs =
-            ServerUtils.parseInt(
+            CoreUtil.parseInt(
                 stormConf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS), 30);
       }
       DelayEvent delayEvent =
@@ -72,7 +71,7 @@ public class RebalanceTransitionCallback extends BaseCallback {
       delayEvent.execute(args);
     } catch (Exception e) {
       LOG.error("Failed Update state while rebalancing:"
-          + ServerUtils.stringifyError(e));
+          + CoreUtil.stringifyError(e));
     }
 
     StormBase stormBase = new StormBase();

@@ -17,10 +17,9 @@
  */
 package org.apache.storm.daemon.supervisor;
 
-import backtype.storm.ClojureClass;
-
-import com.tencent.jstorm.daemon.worker.WorkerStatus;
-import com.tencent.jstorm.daemon.worker.heartbeat.WorkerLocalHeartbeat;
+import org.apache.storm.ClojureClass;
+import org.apache.storm.daemon.worker.WorkerStatus;
+import org.apache.storm.daemon.worker.heartbeat.WorkerLocalHeartbeat;
 
 @ClojureClass(className = "backtype.storm.daemon.supervisor#read-allocated-workers:[state hb]")
 public class StateHeartbeat {

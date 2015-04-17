@@ -17,10 +17,9 @@
  */
 package org.apache.storm.daemon.nimbus.transitions;
 
-import backtype.storm.ClojureClass;
-
-import com.tencent.jstorm.cluster.StormStatus;
-import com.tencent.jstorm.utils.thread.BaseCallback;
+import org.apache.storm.ClojureClass;
+import org.apache.storm.cluster.StormStatus;
+import org.apache.storm.util.thread.BaseCallback;
 
 @ClojureClass(className = "backtype.storm.daemon.nimbus#state-transitions#active")
 public class ActiveTransitionCallback extends BaseCallback {

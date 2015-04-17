@@ -31,6 +31,7 @@ import org.apache.storm.ClojureClass;
 import org.apache.storm.cluster.StormClusterState;
 import org.apache.storm.cluster.StormZkClusterState;
 import org.apache.storm.daemon.common.Common;
+import org.apache.storm.daemon.nimbus.transitions.StateTransitions;
 import org.apache.storm.daemon.worker.executor.ExecutorCache;
 import org.apache.storm.zookeeper.data.ACL;
 
@@ -39,8 +40,10 @@ import backtype.storm.generated.ExecutorInfo;
 import backtype.storm.nimbus.ITopologyValidator;
 import backtype.storm.scheduler.INimbus;
 import backtype.storm.scheduler.IScheduler;
+import backtype.storm.security.INimbusCredentialPlugin;
 import backtype.storm.security.auth.AuthUtils;
 import backtype.storm.security.auth.IAuthorizer;
+import backtype.storm.security.auth.ICredentialsRenewer;
 import backtype.storm.utils.Utils;
 
 import com.esotericsoftware.minlog.Log;

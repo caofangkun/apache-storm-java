@@ -19,17 +19,16 @@ package org.apache.storm.daemon.nimbus.transitions;
 
 import java.util.Map;
 
+import org.apache.storm.ClojureClass;
+import org.apache.storm.cluster.StormStatus;
+import org.apache.storm.daemon.nimbus.NimbusData;
+import org.apache.storm.daemon.nimbus.NimbusUtils;
+import org.apache.storm.util.CoreUtil;
+import org.apache.storm.util.thread.BaseCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.ClojureClass;
 import backtype.storm.Config;
-
-import com.tencent.jstorm.cluster.StormStatus;
-import com.tencent.jstorm.daemon.nimbus.NimbusData;
-import com.tencent.jstorm.daemon.nimbus.NimbusUtils;
-import com.tencent.jstorm.utils.ServerUtils;
-import com.tencent.jstorm.utils.thread.BaseCallback;
 
 @ClojureClass(className = "backtype.storm.daemon.nimbus#kill-transition")
 public class KillTransitionCallback extends BaseCallback {
@@ -53,7 +52,7 @@ public class KillTransitionCallback extends BaseCallback {
         Map stormConf =
             NimbusUtils.readStormConf(nimbusData.getConf(), stormId);
         delaySecs =
-            ServerUtils.parseInt(
+            CoreUtil.parseInt(
                 stormConf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS), 30);
       } catch (Exception e) {
         LOG.info("Failed to get topology configuration " + stormId);
