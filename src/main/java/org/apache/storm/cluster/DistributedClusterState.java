@@ -24,11 +24,17 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.curator.framework.recipes.leader.LeaderSelector;
+import org.apache.curator.framework.recipes.leader.LeaderSelectorListener;
 import org.apache.storm.ClojureClass;
 import org.apache.storm.curator.framework.CuratorFramework;
 import org.apache.storm.util.CoreUtil;
+import org.apache.storm.zk.DefaultWatcherCallBack;
+import org.apache.storm.zk.WatcherCallBack;
+import org.apache.storm.zk.Zookeeper;
 import org.apache.storm.zookeeper.CreateMode;
 import org.apache.storm.zookeeper.KeeperException;
+import org.apache.storm.zookeeper.Watcher.Event.EventType;
 import org.apache.storm.zookeeper.Watcher.Event.KeeperState;
 import org.apache.storm.zookeeper.data.ACL;
 import org.slf4j.Logger;
@@ -67,8 +73,7 @@ public class DistributedClusterState implements ClusterState {
         CoreUtil.parseList(conf.get(Config.STORM_ZOOKEEPER_SERVERS),
             Arrays.asList("localhost"));
     String stormZookeeperRoot =
-        CoreUtil.parseString(conf.get(Config.STORM_ZOOKEEPER_ROOT),
-            "/storm");
+        CoreUtil.parseString(conf.get(Config.STORM_ZOOKEEPER_ROOT), "/storm");
 
     CuratorFramework _zk =
         zkobj.mkClient(conf, stormZookeeperServers, stormZookeeperPort, "",

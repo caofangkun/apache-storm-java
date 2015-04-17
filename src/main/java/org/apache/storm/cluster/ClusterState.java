@@ -20,6 +20,8 @@ package org.apache.storm.cluster;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.curator.framework.recipes.leader.LeaderSelector;
+import org.apache.curator.framework.recipes.leader.LeaderSelectorListener;
 import org.apache.storm.ClojureClass;
 import org.apache.storm.zookeeper.data.ACL;
 

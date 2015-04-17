@@ -21,6 +21,10 @@ import java.util.Map;
 
 import javax.security.auth.Subject;
 
+import backtype.storm.security.INimbusCredentialPlugin;
+import backtype.storm.security.auth.IAutoCredentials;
+import backtype.storm.security.auth.ICredentialsRenewer;
+
 /**
  * mock implementation of INimbusCredentialPlugin,IAutoCredentials and
  * ICredentialsRenewer for testing only.

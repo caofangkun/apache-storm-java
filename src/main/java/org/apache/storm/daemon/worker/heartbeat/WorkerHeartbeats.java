@@ -22,11 +22,10 @@ import java.util.Map;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.storm.ClojureClass;
+import org.apache.storm.daemon.worker.stats.StatsData;
 
-import backtype.storm.ClojureClass;
 import backtype.storm.generated.ExecutorInfo;
-
-import com.tencent.jstorm.stats.StatsData;
 
 @ClojureClass(className = "backtype.storm.daemon.worker#do-executor-heartbeats:zk-hb")
 public class WorkerHeartbeats implements Serializable {

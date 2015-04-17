@@ -22,15 +22,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.api.CuratorEvent;
+import org.apache.curator.framework.api.CuratorEventType;
+import org.apache.curator.framework.api.CuratorListener;
+import org.apache.curator.framework.recipes.leader.LeaderSelector;
+import org.apache.curator.framework.recipes.leader.LeaderSelectorListener;
 import org.apache.storm.ClojureClass;
 import org.apache.storm.cluster.DataInfo;
 import org.apache.storm.util.CoreUtil;
+import org.apache.storm.zookeeper.CreateMode;
+import org.apache.storm.zookeeper.KeeperException;
+import org.apache.storm.zookeeper.WatchedEvent;
+import org.apache.storm.zookeeper.data.ACL;
+import org.apache.storm.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import src.jvm.backtype.storm.Config;
-import src.jvm.backtype.storm.utils.Utils;
-import src.jvm.backtype.storm.utils.ZookeeperAuthInfo;
+import backtype.storm.Config;
+import backtype.storm.utils.Utils;
+import backtype.storm.utils.ZookeeperAuthInfo;
 
 @ClojureClass(className = "backtype.storm.zookeeper")
 public class Zookeeper {

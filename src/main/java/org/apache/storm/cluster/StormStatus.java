@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.storm.daemon.nimbus.transitions.StatusType;
 
 /**
  * 

@@ -19,6 +19,8 @@ package org.apache.storm;
 
 import java.util.Map;
 
+import org.apache.storm.daemon.nimbus.NimbusData;
+
 import backtype.storm.scheduler.INimbus;
 
 /**
@@ -31,6 +33,7 @@ public class LocalNimbusData extends NimbusData {
 
   private static final long serialVersionUID = 1L;
 
+  @SuppressWarnings("rawtypes")
   public LocalNimbusData(Map conf, INimbus inimbus) throws Exception {
     super(conf, inimbus);
   }

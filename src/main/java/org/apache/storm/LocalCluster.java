@@ -25,16 +25,29 @@ import java.util.Vector;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.storm.http.auth.Credentials;
+import org.apache.storm.cluster.ClusterState;
+import org.apache.storm.cluster.DistributedClusterState;
+import org.apache.storm.cluster.StormClusterState;
+import org.apache.storm.cluster.StormZkClusterState;
+import org.apache.storm.config.ConfigUtil;
+import org.apache.storm.daemon.nimbus.NimbusData;
+import org.apache.storm.daemon.nimbus.ServiceHandler;
+import org.apache.storm.daemon.nimbus.StandaloneNimbus;
+import org.apache.storm.daemon.nimbus.threads.CleanInboxRunnable;
+import org.apache.storm.daemon.nimbus.threads.MonitorRunnable;
+import org.apache.storm.daemon.supervisor.SupervisorManager;
+import org.apache.storm.daemon.supervisor.psim.ProcessSimulator;
+import org.apache.storm.daemon.worker.messaging.local.LocalContext;
+import org.apache.storm.util.CoreUtil;
+import org.apache.storm.zk.InprocessZookeeper;
 import org.apache.thrift7.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
 import backtype.storm.ILocalCluster;
-import backtype.storm.cluster.ClusterState;
-import backtype.storm.cluster.StormClusterState;
 import backtype.storm.generated.ClusterSummary;
+import backtype.storm.generated.Credentials;
 import backtype.storm.generated.KillOptions;
 import backtype.storm.generated.NotAliveException;
 import backtype.storm.generated.RebalanceOptions;
@@ -43,7 +56,6 @@ import backtype.storm.generated.SubmitOptions;
 import backtype.storm.generated.TopologyInfo;
 import backtype.storm.generated.TopologyInitialStatus;
 import backtype.storm.messaging.IContext;
-import backtype.storm.messaging.local.LocalContext;
 import backtype.storm.scheduler.INimbus;
 import backtype.storm.security.auth.ThriftServer;
 import backtype.storm.utils.Utils;
@@ -106,8 +118,8 @@ public class LocalCluster implements ILocalCluster {
   @SuppressWarnings({ "unchecked", "rawtypes" })
   @ClojureClass(className = "backtype.storm.LocalCluster#-init")
   protected Map init() throws Exception {
-    Map<String, Object> zkConf = ConfigUtils.readDefaultConfig();
-    String zkTmp = ServerUtils.localTempPath();
+    Map<String, Object> zkConf = ConfigUtil.readDefaultConfig();
+    String zkTmp = CoreUtil.localTempPath();
     zkConf.put(Config.STORM_LOCAL_DIR, zkTmp);
     this.zkServer = new InprocessZookeeper(zkConf);
     this.zkServer.start();
@@ -166,9 +178,9 @@ public class LocalCluster implements ILocalCluster {
             "Topology conf is not json-serializable");
 
       serviceHandler.submitTopologyWithOpts(topologyName, null,
-          ServerUtils.to_json(conf), topology, submitOpts);
+          CoreUtil.to_json(conf), topology, submitOpts);
     } catch (Exception e) {
-      LOG.error(ServerUtils.stringifyError(e));
+      LOG.error(CoreUtil.stringifyError(e));
     }
   }
 
@@ -182,7 +194,7 @@ public class LocalCluster implements ILocalCluster {
     try {
       serviceHandler.killTopologyWithOpts(name, options);
     } catch (Exception e) {
-      LOG.error(ServerUtils.stringifyError(e));
+      LOG.error(CoreUtil.stringifyError(e));
     }
   }
 
@@ -258,10 +270,10 @@ public class LocalCluster implements ILocalCluster {
     for (String dir : tmpDirs) {
       try {
         LOG.info("Deleting temporary path {}", dir);
-        ServerUtils.rmr(dir);
+        CoreUtil.rmr(dir);
       } catch (Exception e) {
         LOG.warn("Failed to clean up LocalCluster tmp dirs for {}",
-            ServerUtils.stringifyError(e));
+            CoreUtil.stringifyError(e));
       }
     }
 
@@ -324,10 +336,11 @@ public class LocalCluster implements ILocalCluster {
     return state;
   }
 
+  @SuppressWarnings("unchecked")
   public void launchLocalServer(INimbus inimbus) throws Exception {
     initLocalShutdownHook();
 
-    String nimbusTmp = ServerUtils.localTempPath();
+    String nimbusTmp = CoreUtil.localTempPath();
     Map<String, Object> nimbusConf = new HashMap<String, Object>();
     nimbusConf.putAll(this.daemonConf);
     nimbusConf.put(Config.STORM_LOCAL_DIR, nimbusTmp);
@@ -344,7 +357,7 @@ public class LocalCluster implements ILocalCluster {
   private void scheduleLocalNimbusMonitor(Map conf) throws Exception {
     // Schedule Nimbus monitor
     int monitorFreqSecs =
-        ServerUtils.parseInt(conf.get(Config.NIMBUS_MONITOR_FREQ_SECS), 10);
+        CoreUtil.parseInt(conf.get(Config.NIMBUS_MONITOR_FREQ_SECS), 10);
     final ScheduledExecutorService scheduExec = nimbusData.getScheduExec();
     MonitorRunnable r1 = new MonitorRunnable(nimbusData);
     scheduExec.scheduleAtFixedRate(r1, 0, monitorFreqSecs, TimeUnit.SECONDS);
@@ -362,15 +375,14 @@ public class LocalCluster implements ILocalCluster {
   private void scheduleLocalNimbusInboxCleaner(Map conf) throws IOException {
     final ScheduledExecutorService scheduExec = nimbusData.getScheduExec();
     // Schedule Nimbus inbox cleaner
-    String dir_location = ConfigUtils.masterInbox(conf);
+    String dir_location = ConfigUtil.masterInbox(conf);
     int inbox_jar_expiration_secs =
-        ServerUtils.parseInt(conf.get(Config.NIMBUS_INBOX_JAR_EXPIRATION_SECS),
+        CoreUtil.parseInt(conf.get(Config.NIMBUS_INBOX_JAR_EXPIRATION_SECS),
             3600);
     CleanInboxRunnable clean_inbox =
         new CleanInboxRunnable(dir_location, inbox_jar_expiration_secs);
     int cleanup_inbox_freq_secs =
-        ServerUtils.parseInt(conf.get(Config.NIMBUS_CLEANUP_INBOX_FREQ_SECS),
-            600);
+        CoreUtil.parseInt(conf.get(Config.NIMBUS_CLEANUP_INBOX_FREQ_SECS), 600);
     scheduExec.scheduleAtFixedRate(clean_inbox, 0, cleanup_inbox_freq_secs,
         TimeUnit.SECONDS);
     LOG.info("Successfully init " + dir_location + " cleaner");
@@ -387,7 +399,7 @@ public class LocalCluster implements ILocalCluster {
   @ClojureClass(className = "backtype.storm.testing#mk-shared-context")
   public static IContext mkSharedContext(Map conf) {
     Boolean isLocalModeZMQ =
-        ServerUtils.parseBoolean(conf.get(Config.STORM_LOCAL_MODE_ZMQ), false);
+        CoreUtil.parseBoolean(conf.get(Config.STORM_LOCAL_MODE_ZMQ), false);
     LocalContext context = null;
     if (!isLocalModeZMQ) {
       context = new LocalContext(null, null);
@@ -474,4 +486,5 @@ public class LocalCluster implements ILocalCluster {
     // TODO Auto-generated method stub
 
   }
+
 }
