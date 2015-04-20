@@ -17,14 +17,25 @@
  */
 package org.apache.storm.localstate;
 
-import org.apache.storm.ClojureClass;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+import org.apache.storm.ClojureClass;
+import org.apache.storm.daemon.worker.heartbeat.WorkerLocalHeartbeat;
+
+import backtype.storm.generated.ExecutorInfo;
+import backtype.storm.generated.LSApprovedWorkers;
+import backtype.storm.generated.LSSupervisorAssignments;
 import backtype.storm.generated.LSSupervisorId;
+import backtype.storm.generated.LSWorkerHeartbeat;
+import backtype.storm.generated.LocalAssignment;
 import backtype.storm.utils.LocalState;
 
 @ClojureClass(className = "backtype.storm.local-state")
 public class LocalStateUtil {
-  
+
   @ClojureClass(className = "backtype.storm.local-state#LS-WORKER-HEARTBEAT")
   public static final String LS_WORKER_HEARTBEAT = "worker-heartbeat";
   @ClojureClass(className = "backtype.storm.local-state#LS-ID")
@@ -33,13 +44,64 @@ public class LocalStateUtil {
   public static final String LS_LOCAL_ASSIGNMENTS = "local-assignments";
   @ClojureClass(className = "backtype.storm.local-state#LS-APPROVED-WORKERS")
   public static final String LS_APPROVED_WORKERS = "approved-workers";
-  
-  
+
   @ClojureClass(className = "backtype.storm.local-state#ls-supervisor-id!")
-  public static void lsSupervisorId (LocalState localState, String id) {
+  public static void lsSupervisorId(LocalState localState, String id) {
     localState.put(LS_ID, new LSSupervisorId(id));
   }
-  
-  //TODO
 
+  @ClojureClass(className = "backtype.storm.local-state#ls-supervisor-id")
+  public static String getLsSupervisorId(LocalState localState) {
+    LSSupervisorId superId = (LSSupervisorId) localState.get(LS_ID);
+    return superId.get_supervisor_id();
+  }
+
+  @ClojureClass(className = "backtype.storm.local-state#ls-approved-workers!")
+  public static void lsApprovedWorkers(LocalState localState,
+      Map<String, Integer> workers) {
+    localState.put(LS_APPROVED_WORKERS, new LSApprovedWorkers(workers));
+  }
+
+  @ClojureClass(className = "backtype.storm.local-state#ls-approved-workers")
+  public static Map<String, Integer> getLsApprovedWorkers(LocalState localState) {
+    LSApprovedWorkers approvedWorkers =
+        (LSApprovedWorkers) localState.get(LS_APPROVED_WORKERS);
+    return approvedWorkers.get_approved_workers();
+  }
+
+  @ClojureClass(className = "backtype.storm.local-state#ls-local-assignments!")
+  public static void lsLocalAssignments(LocalState localState,
+      Map<String, Integer> assignments) {
+    Map<Integer, LocalAssignment> localAssignmentMap = null;
+    // TODO
+    localState.put(LS_LOCAL_ASSIGNMENTS, new LSSupervisorAssignments(
+        localAssignmentMap));
+  }
+
+  @ClojureClass(className = "backtype.storm.local-state#ls-local-assignments")
+  public static Map<Integer, LocalAssignment> getLsLocalAssignments(
+      LocalState localState) {
+    LSSupervisorAssignments thriftLocalAssignments =
+        (LSSupervisorAssignments) localState.get(LS_LOCAL_ASSIGNMENTS);
+    return thriftLocalAssignments.get_assignments();
+  }
+
+  @ClojureClass(className = "backtype.storm.local-state#ls-worker-heartbeat!")
+  public static void lsWorkerHeartbeat(LocalState localState, int timeSecs,
+      String stormId, List<ExecutorInfo> executors, int port) {
+    localState.put(LS_WORKER_HEARTBEAT, new LSWorkerHeartbeat(timeSecs,
+        stormId, executors, port));
+  }
+
+  @ClojureClass(className = "backtype.storm.local-state#ls-worker-heartbeat")
+  public static WorkerLocalHeartbeat getLsWorkerHeartbeat(LocalState localState) {
+    LSWorkerHeartbeat workerHb =
+        (LSWorkerHeartbeat) localState.get(LS_WORKER_HEARTBEAT);
+    Set<ExecutorInfo> executors = new HashSet<ExecutorInfo>();
+    for (ExecutorInfo executor : workerHb.get_executors()) {
+      executors.add(executor);
+    }
+    return new WorkerLocalHeartbeat(workerHb.get_time_secs(),
+        workerHb.get_topology_id(), executors, workerHb.get_port(), "");
+  }
 }
