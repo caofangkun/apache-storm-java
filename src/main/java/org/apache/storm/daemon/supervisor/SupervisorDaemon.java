@@ -19,7 +19,7 @@ package org.apache.storm.daemon.supervisor;
 
 import java.util.Map;
 
-import backtype.storm.ClojureClass;
+import org.apache.storm.ClojureClass;
 
 @ClojureClass(className = "backtype.storm.daemon.supervisor#SupervisorDaemon")
 public interface SupervisorDaemon {

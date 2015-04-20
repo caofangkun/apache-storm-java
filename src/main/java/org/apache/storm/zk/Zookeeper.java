@@ -22,14 +22,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.api.CuratorEvent;
-import org.apache.curator.framework.api.CuratorEventType;
-import org.apache.curator.framework.api.CuratorListener;
 import org.apache.curator.framework.recipes.leader.LeaderSelector;
 import org.apache.curator.framework.recipes.leader.LeaderSelectorListener;
 import org.apache.storm.ClojureClass;
 import org.apache.storm.cluster.DataInfo;
+import org.apache.storm.curator.framework.CuratorFramework;
+import org.apache.storm.curator.framework.api.CuratorEvent;
+import org.apache.storm.curator.framework.api.CuratorEventType;
+import org.apache.storm.curator.framework.api.CuratorListener;
 import org.apache.storm.util.CoreUtil;
 import org.apache.storm.zookeeper.CreateMode;
 import org.apache.storm.zookeeper.KeeperException;
@@ -69,7 +69,6 @@ public class Zookeeper {
           Utils.newCurator(conf, servers, port, root, new ZookeeperAuthInfo(
               authConf));
     }
-
     fk.getCuratorListenable().addListener(new CuratorListener() {
       @Override
       public void eventReceived(CuratorFramework _fk, CuratorEvent e)
@@ -103,8 +102,7 @@ public class Zookeeper {
 
   @ClojureClass(className = "backtype.storm.zookeeper#create-node")
   public String createNode(CuratorFramework zk, String path, byte[] data,
-      org.apache.zookeeper.CreateMode mode, List<ACL> acls)
-      throws RuntimeException {
+      CreateMode mode, List<ACL> acls) throws RuntimeException {
     String result = null;
     try {
       String npath = CoreUtil.normalizePath(path);
@@ -282,6 +280,9 @@ public class Zookeeper {
 
   public LeaderSelector mkLeaderSelector(CuratorFramework client,
       String leaderPath, LeaderSelectorListener listener) {
-    return new LeaderSelector(client, leaderPath, listener);
+    // TODO fix this
+    return new LeaderSelector(
+        (org.apache.curator.framework.CuratorFramework) client, leaderPath,
+        listener);
   }
 }

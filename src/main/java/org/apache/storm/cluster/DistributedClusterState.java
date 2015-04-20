@@ -156,7 +156,7 @@ public class DistributedClusterState implements ClusterState {
     if (zkobj.exists(zk, path, false)) {
       zkobj.setData(zk, path, data);
     } else {
-      zkobj.mkdirs(zk, ServerUtils.parentPath(path), acls);
+      zkobj.mkdirs(zk, CoreUtil.parentPath(path), acls);
       zkobj.createNode(zk, path, data, CreateMode.PERSISTENT, acls);
     }
   }

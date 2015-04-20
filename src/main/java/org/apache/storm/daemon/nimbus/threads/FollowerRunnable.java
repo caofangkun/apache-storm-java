@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.curator.framework.recipes.leader.LeaderSelector;
 import org.apache.storm.cluster.StormClusterState;
 import org.apache.storm.config.ConfigUtil;
 import org.apache.storm.curator.framework.CuratorFramework;
@@ -34,6 +35,8 @@ import org.apache.storm.util.thread.RunnableCallback;
 import org.apache.thrift7.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import backtype.storm.generated.AuthorizationException;
 
 public class FollowerRunnable implements Runnable {
 

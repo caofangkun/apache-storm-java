@@ -17,6 +17,7 @@
  */
 package org.apache.storm.daemon.worker;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,7 +43,7 @@ import backtype.storm.task.WorkerTopologyContext;
 public class WorkerShutdown implements ShutdownableDameon {
   private static Logger LOG = LoggerFactory.getLogger(WorkerShutdown.class);
   private List<ExecutorShutdown> executors;
-  private ConcurrentHashMap<WorkerSlot, IConnection> cachedNodeportSocket;
+  private HashMap<WorkerSlot, IConnection> cachedNodeportSocket;
   private Shutdownable workerReceiveThreadShutdown;
   private IContext context;
   private AsyncLoopThread[] threads;

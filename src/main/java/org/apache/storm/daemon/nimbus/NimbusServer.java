@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import backtype.storm.generated.Nimbus;
 import backtype.storm.generated.Nimbus.Iface;
 import backtype.storm.scheduler.INimbus;
+import backtype.storm.security.auth.ThriftConnectionType;
 import backtype.storm.security.auth.ThriftServer;
 import backtype.storm.utils.Utils;
 

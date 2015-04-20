@@ -34,6 +34,7 @@ import org.apache.storm.daemon.worker.executor.Executor;
 import org.apache.storm.daemon.worker.executor.ExecutorShutdown;
 import org.apache.storm.daemon.worker.heartbeat.WorkerHeartbeatRunable;
 import org.apache.storm.daemon.worker.heartbeat.WorkerLocalHeartbeatRunable;
+import org.apache.storm.daemon.worker.messaging.loader.WorkerReceiveThreadShutdown;
 import org.apache.storm.daemon.worker.threads.RefreshConnections;
 import org.apache.storm.daemon.worker.threads.RefreshStormActive;
 import org.apache.storm.daemon.worker.transfer.TransferTuplesHandler;
@@ -48,6 +49,7 @@ import backtype.storm.daemon.Shutdownable;
 import backtype.storm.generated.ExecutorInfo;
 import backtype.storm.messaging.IContext;
 import backtype.storm.security.auth.AuthUtils;
+import backtype.storm.security.auth.IAutoCredentials;
 import backtype.storm.utils.Utils;
 
 @ClojureClass(className = "backtype.storm.daemon.worker")

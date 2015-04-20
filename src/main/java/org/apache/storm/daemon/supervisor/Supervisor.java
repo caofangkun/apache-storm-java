@@ -31,6 +31,7 @@ import org.apache.storm.daemon.supervisor.sync.SyncProcessesEvent;
 import org.apache.storm.daemon.supervisor.sync.SynchronizeSupervisorEvent;
 import org.apache.storm.daemon.worker.DefaultKillFn;
 import org.apache.storm.http.HttpServer;
+import org.apache.storm.util.CoreUtil;
 import org.apache.storm.util.thread.AsyncLoopThread;
 import org.apache.storm.util.thread.RunnableCallback;
 import org.slf4j.Logger;
@@ -86,7 +87,7 @@ public class Supervisor {
             "synchronize-supervisor-pusher-thread");
 
     int syncFrequence =
-        ServerUtils.parseInt(
+        CoreUtil.parseInt(
             conf.get(Config.SUPERVISOR_MONITOR_FREQUENCY_SECS), 3);
     RunnableCallback syncProcessesPusher =
         new AddEventFn(processesEventManager, syncProcesses,
@@ -137,10 +138,10 @@ public class Supervisor {
     Runtime.getRuntime().addShutdownHook(new Thread() {
       public void run() {
         try {
-          ServerUtils.sleepSecs(1);
+          CoreUtil.sleepSecs(1);
           Runtime.getRuntime().halt(20);
         } catch (InterruptedException e) {
-          LOG.error(ServerUtils.stringifyError(e));
+          LOG.error(CoreUtil.stringifyError(e));
         }
       }
     });
@@ -153,7 +154,7 @@ public class Supervisor {
     try {
       instance.launch(isupervisor);
     } catch (Exception e) {
-      LOG.error("Failed to start supervisor\n", ServerUtils.stringifyError(e));
+      LOG.error("Failed to start supervisor\n", CoreUtil.stringifyError(e));
       e.printStackTrace();
       System.exit(1);
     }

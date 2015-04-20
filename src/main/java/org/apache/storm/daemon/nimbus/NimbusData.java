@@ -33,6 +33,7 @@ import org.apache.storm.cluster.StormZkClusterState;
 import org.apache.storm.daemon.common.Common;
 import org.apache.storm.daemon.nimbus.transitions.StateTransitions;
 import org.apache.storm.daemon.worker.executor.ExecutorCache;
+import org.apache.storm.util.CoreUtil;
 import org.apache.storm.zookeeper.data.ACL;
 
 import backtype.storm.Config;
@@ -98,7 +99,7 @@ public class NimbusData implements Serializable {
     this.uploaders = new FileCacheMap<Object, Object>(conf);
     this.scheduExec = Executors.newScheduledThreadPool(SCHEDULE_THREAD_NUM);
     this.statusTransition = new StateTransitions(this);
-    this.startTime = ServerUtils.current_time_secs();
+    this.startTime = CoreUtil.current_time_secs();
     this.validator = NimbusUtils.mkTopologyValidator(conf);
     this.scheduler = NimbusUtils.mkScheduler(conf, inimbus);
     this.idToSchedStatus = new HashMap<String, String>();
@@ -107,7 +108,7 @@ public class NimbusData implements Serializable {
   }
 
   public int uptime() {
-    return (ServerUtils.current_time_secs() - startTime);
+    return (CoreUtil.current_time_secs() - startTime);
   }
 
   @SuppressWarnings("rawtypes")
@@ -231,7 +232,7 @@ public class NimbusData implements Serializable {
       stormClusterState.disconnect();
     } catch (Exception e) {
       Log.error("Error when disconnect StormClusterState for "
-          + ServerUtils.stringifyError(e));
+          + CoreUtil.stringifyError(e));
     }
   }
 

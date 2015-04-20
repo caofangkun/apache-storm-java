@@ -99,8 +99,7 @@ public class SchedulerUtils {
         Set<Integer> alivePorts = sd.getAllPorts();
         Set<Integer> allPorts = (Set<Integer>) sd.getMeta();
 
-        Set<Integer> deadPorts =
-            CoreUtil.set_difference(allPorts, alivePorts);
+        Set<Integer> deadPorts = CoreUtil.set_difference(allPorts, alivePorts);
         if (null != deadPorts && deadPorts.size() > 0) {
           for (Integer dp : deadPorts) {
             deadSlots.add(new WorkerSlot(entry.getKey(), dp));
@@ -177,7 +176,7 @@ public class SchedulerUtils {
         }
       });
 
-      return ServerUtils.interleaveAll(tmpList);
+      return CoreUtil.interleaveAll(tmpList);
     }
     return null;
   }

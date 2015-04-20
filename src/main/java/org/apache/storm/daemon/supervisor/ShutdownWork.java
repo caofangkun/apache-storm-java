@@ -25,6 +25,7 @@ import java.util.Set;
 import org.apache.storm.ClojureClass;
 import org.apache.storm.config.ConfigUtil;
 import org.apache.storm.daemon.common.Common;
+import org.apache.storm.daemon.supervisor.psim.ProcessSimulator;
 import org.apache.storm.daemon.worker.heartbeat.WorkerLocalHeartbeat;
 import org.apache.storm.util.CoreUtil;
 import org.apache.storm.util.thread.RunnableCallback;
