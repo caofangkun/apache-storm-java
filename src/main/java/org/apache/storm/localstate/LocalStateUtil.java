@@ -71,11 +71,9 @@ public class LocalStateUtil {
 
   @ClojureClass(className = "backtype.storm.local-state#ls-local-assignments!")
   public static void lsLocalAssignments(LocalState localState,
-      Map<String, Integer> assignments) {
-    Map<Integer, LocalAssignment> localAssignmentMap = null;
-    // TODO
+      Map<Integer, LocalAssignment> assignments) {
     localState.put(LS_LOCAL_ASSIGNMENTS, new LSSupervisorAssignments(
-        localAssignmentMap));
+        assignments));
   }
 
   @ClojureClass(className = "backtype.storm.local-state#ls-local-assignments")
