@@ -14,7 +14,6 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<storm.version>0.11.0-SNAPSHOT</storm.version>
 		<curator.version>2.5.0</curator.version>
-		<jzmq.version>2.1.0</jzmq.version>
 		<commons-cli.version>1.2</commons-cli.version>
 	</properties>
 
@@ -81,11 +80,6 @@
 			<artifactId>junit</artifactId>
 			<version>3.8.1</version>
 			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>backtype</groupId>
-			<artifactId>jzmq</artifactId>
-			<version>${jzmq.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-cli</groupId>

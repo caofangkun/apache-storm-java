@@ -76,7 +76,7 @@ public class MonitorCommand {
 
   @SuppressWarnings("rawtypes")
   public void realMain(String[] args) throws Exception {
-    CmdLineParser parser = new CmdLineParser(this);
+    CommandLineParser parser = new CmdLineParser(this);
     parser.setUsageWidth(80);
     try {
       parser.parseArgument(args);

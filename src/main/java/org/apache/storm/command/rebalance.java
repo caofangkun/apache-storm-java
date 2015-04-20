@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.commons.cli.Option;
 import org.apache.storm.ClojureClass;
 import org.apache.storm.util.CoreUtil;
 
@@ -62,7 +61,7 @@ public class rebalance {
 
   @SuppressWarnings("rawtypes")
   public void realMain(String[] args) throws Exception {
-    CmdLineParser parser = new CmdLineParser(this);
+    CommandLineParser parser = new CmdLineParser(this);
     parser.setUsageWidth(80);
     try {
       parser.parseArgument(args);
