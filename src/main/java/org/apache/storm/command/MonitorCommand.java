@@ -24,6 +24,8 @@ import org.apache.storm.ClojureClass;
 import backtype.storm.utils.Monitor;
 import backtype.storm.utils.NimbusClient;
 import backtype.storm.utils.Utils;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.CommandLineParser;
 
 /**
  * """Syntax: [storm monitor topology-name [-i interval-secs] [-m component-id]

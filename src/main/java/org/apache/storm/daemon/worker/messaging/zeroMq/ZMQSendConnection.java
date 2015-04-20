@@ -48,7 +48,6 @@ public class ZMQSendConnection implements IConnection {
       return;
     }
     while (msgs.hasNext()) {
-      List<TaskMessage> ret = new ArrayList<TaskMessage>();
       TaskMessage message = msgs.next();
       byte[] bytes = mkPacket(message);
       ZeroMq.send(socket, bytes);

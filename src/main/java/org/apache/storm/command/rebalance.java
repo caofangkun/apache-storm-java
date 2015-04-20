@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.commons.cli.Option;
 import org.apache.storm.ClojureClass;
 import org.apache.storm.util.CoreUtil;
 

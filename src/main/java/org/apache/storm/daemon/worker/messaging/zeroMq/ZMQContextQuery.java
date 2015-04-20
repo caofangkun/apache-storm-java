@@ -17,9 +17,8 @@
  */
 package org.apache.storm.daemon.worker.messaging.zeroMq;
 
+import org.apache.storm.ClojureClass;
 import org.zeromq.ZMQ.Context;
-
-import backtype.storm.ClojureClass;
 
 @ClojureClass(className = "backtype.storm.messaging.zmq#ZMQContextQuery")
 public interface ZMQContextQuery {

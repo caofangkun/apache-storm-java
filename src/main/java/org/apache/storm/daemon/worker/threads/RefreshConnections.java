@@ -17,6 +17,7 @@
  */
 package org.apache.storm.daemon.worker.threads;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -51,7 +52,7 @@ public class RefreshConnections extends RunnableCallback {
   private StormClusterState stormClusterState;
   private String stormId;
   private Set<Integer> outboundTasks;
-  private ConcurrentHashMap<WorkerSlot, IConnection> cachedNodePortToSocket;
+  private HashMap<WorkerSlot, IConnection> cachedNodePortToSocket;
   private IContext context;
   private ReentrantReadWriteLock.WriteLock endpointSocketWriteLock;
   private MutableLong retryCount;

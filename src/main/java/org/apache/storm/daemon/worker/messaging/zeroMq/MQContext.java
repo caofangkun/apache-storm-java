@@ -17,23 +17,24 @@
  */
 package org.apache.storm.daemon.worker.messaging.zeroMq;
 
-import java.net.Socket;
 import java.util.Map;
 
 import org.apache.storm.ClojureClass;
+import org.apache.storm.config.ConfigUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zeromq.ZMQ.Context;
+import org.zeromq.ZMQ.Socket;
 
 import backtype.storm.Config;
 import backtype.storm.messaging.IConnection;
 import backtype.storm.messaging.IContext;
-import backtype.storm.messaging.netty.Context;
 import backtype.storm.utils.Utils;
 
 @ClojureClass(className = "backtype.storm.messaging.zmq#ZMQContext")
 public class MQContext implements IContext, ZMQContextQuery {
   private final static Logger LOG = LoggerFactory.getLogger(MQContext.class);
-  private org.zeromq.ZMQ.Context context;
+  private Context context;
   private int lingerMs;
   private boolean isLocal;
   private int hwm;
@@ -44,7 +45,7 @@ public class MQContext implements IContext, ZMQContextQuery {
     int numThreads = Utils.getInt(stormConf.get(Config.ZMQ_THREADS), 1);
     lingerMs = Utils.getInt(stormConf.get(Config.ZMQ_LINGER_MILLIS), 5000);
     hwm = Utils.getInt(stormConf.get(Config.ZMQ_HWM), 0);
-    isLocal = ConfigUtils.clusterMode(stormConf).equals("local");
+    isLocal = ConfigUtil.clusterMode(stormConf).equals("local");
     context = ZeroMq.context(numThreads);
     LOG.info("MQContext prepare done...");
   }
