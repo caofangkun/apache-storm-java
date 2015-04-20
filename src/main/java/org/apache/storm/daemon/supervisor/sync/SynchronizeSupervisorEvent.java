@@ -28,16 +28,17 @@ import org.apache.storm.cluster.StormClusterState;
 import org.apache.storm.config.ConfigUtil;
 import org.apache.storm.daemon.common.Assignment;
 import org.apache.storm.daemon.common.Common;
-import org.apache.storm.daemon.supervisor.LocalAssignment;
 import org.apache.storm.daemon.supervisor.SupervisorData;
 import org.apache.storm.daemon.supervisor.SupervisorUtils;
 import org.apache.storm.daemon.supervisor.event.EventManager;
 import org.apache.storm.guava.collect.Sets;
+import org.apache.storm.localstate.LocalStateUtil;
 import org.apache.storm.util.CoreUtil;
 import org.apache.storm.util.thread.RunnableCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import backtype.storm.generated.LocalAssignment;
 import backtype.storm.scheduler.ISupervisor;
 import backtype.storm.utils.LocalState;
 import backtype.storm.utils.MutableLong;
@@ -136,26 +137,20 @@ public class SynchronizeSupervisorEvent extends RunnableCallback {
         }
       }
 
-      try {
-        LOG.debug("Writing new local assignment " + newAssignment.toString());
-        Set<Integer> differencePorts = new HashSet<Integer>();
-        if (existingAssignment != null) {
-          differencePorts =
-              Sets.difference(existingAssignment.keySet(),
-                  newAssignment.keySet());
-        }
-        for (Integer port : differencePorts) {
-          isupervisor.killedWorker(port);
-        }
-        isupervisor.assigned(newAssignment.keySet());
-        localState.put(Common.LS_LOCAL_ASSIGNMENTS, newAssignment);
-        supervisorData.setAssignmentVersions(assignmentsSnapshot);
-        supervisorData.setCurrAssignment(newAssignment);
-      } catch (IOException e) {
-        LOG.error("put LS_LOCAL_ASSIGNMENTS " + newAssignment
-            + " of localState failed");
-        throw e;
+      LOG.debug("Writing new local assignment " + newAssignment.toString());
+      Set<Integer> differencePorts = new HashSet<Integer>();
+      if (existingAssignment != null) {
+        differencePorts =
+            Sets.difference(existingAssignment.keySet(),
+                newAssignment.keySet());
       }
+      for (Integer port : differencePorts) {
+        isupervisor.killedWorker(port);
+      }
+      isupervisor.assigned(newAssignment.keySet());
+      LocalStateUtil.lsLocalAssignments(localState, newAssignment);
+      supervisorData.setAssignmentVersions(assignmentsSnapshot);
+      supervisorData.setCurrAssignment(newAssignment);
 
       // remove any downloaded code that's no longer assigned or active
       // important that this happens after setting the local assignment so that

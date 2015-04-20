@@ -18,6 +18,8 @@
 package org.apache.storm.daemon.worker.heartbeat;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -26,6 +28,7 @@ import org.apache.storm.ClojureClass;
 import org.apache.storm.config.ConfigUtil;
 import org.apache.storm.daemon.common.Common;
 import org.apache.storm.daemon.worker.WorkerData;
+import org.apache.storm.localstate.LocalStateUtil;
 import org.apache.storm.util.CoreUtil;
 import org.apache.storm.util.thread.RunnableCallback;
 import org.slf4j.Logger;
@@ -47,7 +50,7 @@ public class WorkerLocalHeartbeatRunable extends RunnableCallback {
   private String worker_id;
   private Integer port;
   private String topologyId;
-  private CopyOnWriteArraySet<ExecutorInfo> executors;
+  private List<ExecutorInfo> executors;
   private String processId;
   private int frequence;
   private MutableLong retryCount;
@@ -61,7 +64,7 @@ public class WorkerLocalHeartbeatRunable extends RunnableCallback {
     this.port = workerData.getPort();
     this.topologyId = workerData.getTopologyId();
     this.executors =
-        new CopyOnWriteArraySet<ExecutorInfo>(workerData.getExecutors());
+        new ArrayList<ExecutorInfo>(workerData.getExecutors());
     this.active = workerData.getStormActiveAtom();
     this.processId = workerData.getProcessId();
     this.frequence =
@@ -78,9 +81,9 @@ public class WorkerLocalHeartbeatRunable extends RunnableCallback {
         new WorkerLocalHeartbeat(currtime, topologyId, executors, port,
             processId);
     LOG.debug("Doing heartbeat " + hb.toString());
-    // do the local-file-system heartbeat.
     LocalState state = ConfigUtil.workerState(conf, worker_id);
-    state.put(Common.LS_WORKER_HEARTBEAT, hb, false);
+    // do the local-file-system heartbeat.
+    LocalStateUtil.lsWorkerHeartbeat(state, currtime, workerData.getTopologyId(), executors, port);
     // this is just in case supervisor is down so that disk doesn't fill up.
     // it shouldn't take supervisor 120 seconds between listing dir
     // and reading it

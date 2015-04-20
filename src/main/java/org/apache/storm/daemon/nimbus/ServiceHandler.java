@@ -30,9 +30,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -58,10 +56,10 @@ import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
 import backtype.storm.daemon.Shutdownable;
-import backtype.storm.daemon.common.StormBase;
 import backtype.storm.generated.AlreadyAliveException;
 import backtype.storm.generated.AuthorizationException;
 import backtype.storm.generated.ClusterSummary;
+import backtype.storm.generated.Credentials;
 import backtype.storm.generated.ErrorInfo;
 import backtype.storm.generated.ExecutorInfo;
 import backtype.storm.generated.ExecutorStats;
@@ -70,9 +68,11 @@ import backtype.storm.generated.GetInfoOptions;
 import backtype.storm.generated.InvalidTopologyException;
 import backtype.storm.generated.KillOptions;
 import backtype.storm.generated.Nimbus.Iface;
+import backtype.storm.generated.NodeInfo;
 import backtype.storm.generated.NotAliveException;
 import backtype.storm.generated.NumErrorsChoice;
 import backtype.storm.generated.RebalanceOptions;
+import backtype.storm.generated.StormBase;
 import backtype.storm.generated.StormTopology;
 import backtype.storm.generated.SubmitOptions;
 import backtype.storm.generated.SupervisorSummary;
@@ -83,8 +83,6 @@ import backtype.storm.generated.TopologySummary;
 import backtype.storm.scheduler.INimbus;
 import backtype.storm.scheduler.WorkerSlot;
 import backtype.storm.utils.BufferFileInputStream;
-
-import com.sun.org.apache.xalan.internal.lib.NodeInfo;
 
 @ClojureClass(className = "backtype.storm.daemon.nimbus#service-handler")
 public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
@@ -457,83 +455,84 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
     }
   }
 
-  @SuppressWarnings({ "rawtypes" })
-  public SupervisorWorkers getSupervisorWorkers(String supervisorId)
-      throws NotAliveException, TException {
-    try {
-      if (supervisorId == null) {
-        throw new TException("No supervisor of " + supervisorId);
-      }
-      StormClusterState stormClusterState = nimbus.getStormClusterState();
-      SupervisorInfo supervisorInfo =
-          stormClusterState.supervisorInfo(supervisorId);
-      Map<String, Assignment> assignments = new HashMap<String, Assignment>();
-      // get all active topology's StormBase
-      Map<String, StormBase> bases = Common.topologyBases(stormClusterState);
-      for (Entry<String, StormBase> entry : bases.entrySet()) {
-        String topologyId = entry.getKey();
-        Assignment assignment =
-            stormClusterState.assignmentInfo(topologyId, null);
-        if (assignment == null) {
-          LOG.error("Failed to get assignment of " + topologyId);
-          continue;
-        }
-        assignments.put(topologyId, assignment);
-      }
-
-      Map<Integer, WorkerSummary> portWorkerSummarys =
-          new TreeMap<Integer, WorkerSummary>();
-      for (Entry<String, Assignment> entry : assignments.entrySet()) {
-        String topologyId = entry.getKey();
-        Assignment assignment = entry.getValue();
-        Map stormConf = NimbusUtils.readStormConf(conf, topologyId);
-        StormTopology userTopology =
-            NimbusUtils.readStormTopology(conf, topologyId);
-        Map<Integer, String> taskToComponent =
-            Common.stormTaskInfo(userTopology, stormConf);
-        List<ExecutorSummary> executorSummaries =
-            NimbusUtils.mkExecutorSummaries(stormClusterState, assignment,
-                taskToComponent, topologyId);
-
-        Map<ExecutorInfo, WorkerSlot> executorInfoToWorkerSlot =
-            assignment.getExecutorToNodeport();
-        for (Entry<ExecutorInfo, WorkerSlot> resourceEntry : executorInfoToWorkerSlot
-            .entrySet()) {
-          ExecutorInfo executorInfo = resourceEntry.getKey();
-          WorkerSlot workerSlot = resourceEntry.getValue();
-          if (supervisorId.equals(workerSlot.getNodeId()) == false) {
-            continue;
-          }
-          Integer port = workerSlot.getPort();
-          WorkerSummary workerSummary = portWorkerSummarys.get(port);
-          if (workerSummary == null) {
-            workerSummary = new WorkerSummary();
-            workerSummary.set_port(port);
-            workerSummary.set_topology(topologyId);
-            workerSummary.set_tasks(new ArrayList<ExecutorSummary>());
-            portWorkerSummarys.put(port, workerSummary);
-          }
-          List<ExecutorSummary> tasks = workerSummary.get_tasks();
-          for (ExecutorSummary es : executorSummaries) {
-            if (es.get_executor_info().equals(executorInfo)) {
-              tasks.add(es);
-            }
-          }
-        }
-      }
-      List<WorkerSummary> wokersList = new ArrayList<WorkerSummary>();
-      wokersList.addAll(portWorkerSummarys.values());
-      SupervisorSummary supervisorSummary =
-          NimbusUtils.mkSupervisorSummary(supervisorInfo, supervisorId);
-      return new SupervisorWorkers(supervisorSummary, wokersList);
-    } catch (TException e) {
-      LOG.info("Failed to get ClusterSummary ", e);
-      throw e;
-    } catch (Exception e) {
-      LOG.info("Failed to get ClusterSummary ", e);
-      throw new TException(e);
-    }
-  }
+  // @SuppressWarnings({ "rawtypes" })
+  // public SupervisorWorkers getSupervisorWorkers(String supervisorId)
+  // throws NotAliveException, TException {
+  // try {
+  // if (supervisorId == null) {
+  // throw new TException("No supervisor of " + supervisorId);
+  // }
+  // StormClusterState stormClusterState = nimbus.getStormClusterState();
+  // SupervisorInfo supervisorInfo =
+  // stormClusterState.supervisorInfo(supervisorId);
+  // Map<String, Assignment> assignments = new HashMap<String, Assignment>();
+  // // get all active topology's StormBase
+  // Map<String, StormBase> bases = Common.topologyBases(stormClusterState);
+  // for (Entry<String, StormBase> entry : bases.entrySet()) {
+  // String topologyId = entry.getKey();
+  // Assignment assignment =
+  // stormClusterState.assignmentInfo(topologyId, null);
+  // if (assignment == null) {
+  // LOG.error("Failed to get assignment of " + topologyId);
+  // continue;
+  // }
+  // assignments.put(topologyId, assignment);
+  // }
+  //
+  // Map<Integer, WorkerSummary> portWorkerSummarys =
+  // new TreeMap<Integer, WorkerSummary>();
+  // for (Entry<String, Assignment> entry : assignments.entrySet()) {
+  // String topologyId = entry.getKey();
+  // Assignment assignment = entry.getValue();
+  // Map stormConf = NimbusUtils.readStormConf(conf, topologyId);
+  // StormTopology userTopology =
+  // NimbusUtils.readStormTopology(conf, topologyId);
+  // Map<Integer, String> taskToComponent =
+  // Common.stormTaskInfo(userTopology, stormConf);
+  // List<ExecutorSummary> executorSummaries =
+  // NimbusUtils.mkExecutorSummaries(stormClusterState, assignment,
+  // taskToComponent, topologyId);
+  //
+  // Map<ExecutorInfo, WorkerSlot> executorInfoToWorkerSlot =
+  // assignment.getExecutorToNodeport();
+  // for (Entry<ExecutorInfo, WorkerSlot> resourceEntry :
+  // executorInfoToWorkerSlot
+  // .entrySet()) {
+  // ExecutorInfo executorInfo = resourceEntry.getKey();
+  // WorkerSlot workerSlot = resourceEntry.getValue();
+  // if (supervisorId.equals(workerSlot.getNodeId()) == false) {
+  // continue;
+  // }
+  // Integer port = workerSlot.getPort();
+  // WorkerSummary workerSummary = portWorkerSummarys.get(port);
+  // if (workerSummary == null) {
+  // workerSummary = new WorkerSummary();
+  // workerSummary.set_port(port);
+  // workerSummary.set_topology(topologyId);
+  // workerSummary.set_tasks(new ArrayList<ExecutorSummary>());
+  // portWorkerSummarys.put(port, workerSummary);
+  // }
+  // List<ExecutorSummary> tasks = workerSummary.get_tasks();
+  // for (ExecutorSummary es : executorSummaries) {
+  // if (es.get_executor_info().equals(executorInfo)) {
+  // tasks.add(es);
+  // }
+  // }
+  // }
+  // }
+  // List<WorkerSummary> wokersList = new ArrayList<WorkerSummary>();
+  // wokersList.addAll(portWorkerSummarys.values());
+  // SupervisorSummary supervisorSummary =
+  // NimbusUtils.mkSupervisorSummary(supervisorInfo, supervisorId);
+  // return new SupervisorWorkers(supervisorSummary, wokersList);
+  // } catch (TException e) {
+  // LOG.info("Failed to get ClusterSummary ", e);
+  // throw e;
+  // } catch (Exception e) {
+  // LOG.info("Failed to get ClusterSummary ", e);
+  // throw new TException(e);
+  // }
+  // }
 
   @Override
   @ClojureClass(className = "backtype.storm.daemon.nimbus#service-handler#getTopologyInfo")

@@ -17,10 +17,8 @@
  */
 package org.apache.storm.localstate;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.storm.ClojureClass;
 import org.apache.storm.daemon.worker.heartbeat.WorkerLocalHeartbeat;
@@ -95,11 +93,8 @@ public class LocalStateUtil {
   public static WorkerLocalHeartbeat getLsWorkerHeartbeat(LocalState localState) {
     LSWorkerHeartbeat workerHb =
         (LSWorkerHeartbeat) localState.get(LS_WORKER_HEARTBEAT);
-    Set<ExecutorInfo> executors = new HashSet<ExecutorInfo>();
-    for (ExecutorInfo executor : workerHb.get_executors()) {
-      executors.add(executor);
-    }
     return new WorkerLocalHeartbeat(workerHb.get_time_secs(),
-        workerHb.get_topology_id(), executors, workerHb.get_port(), "");
+        workerHb.get_topology_id(), workerHb.get_executors(),
+        workerHb.get_port(), "");
   }
 }

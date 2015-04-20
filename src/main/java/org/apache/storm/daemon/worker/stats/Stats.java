@@ -274,6 +274,6 @@ public class Stats {
       specificStats = thriftifySpecificStatsSpout(stats);
     }
     return new ExecutorStats(stats.get_emitted(), stats.get_transferred(),
-        specificStats);
+        specificStats, stats.getRate());
   }
 }

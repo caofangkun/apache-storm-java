@@ -33,6 +33,7 @@ import org.apache.storm.daemon.worker.executor.UptimeComputer;
 import org.apache.storm.util.CoreUtil;
 
 import backtype.storm.Config;
+import backtype.storm.generated.LocalAssignment;
 import backtype.storm.generated.NodeInfo;
 import backtype.storm.messaging.IContext;
 import backtype.storm.scheduler.ISupervisor;

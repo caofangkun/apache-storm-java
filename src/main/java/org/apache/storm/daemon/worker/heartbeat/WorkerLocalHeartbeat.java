@@ -18,7 +18,9 @@
 package org.apache.storm.daemon.worker.heartbeat;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.storm.ClojureClass;
@@ -31,15 +33,15 @@ public class WorkerLocalHeartbeat implements Serializable {
   private static final long serialVersionUID = -914166726205534892L;
   private int timeSecs;
   private String stormId;
-  private Set<ExecutorInfo> executors;
+  private List<ExecutorInfo> executors;
   private Integer port;
   private String processId;
 
   public WorkerLocalHeartbeat(int timeSecs, String stormId,
-      Set<ExecutorInfo> executors, Integer port, String processId) {
+      List<ExecutorInfo> executors, Integer port, String processId) {
     this.timeSecs = timeSecs;
     this.stormId = stormId;
-    this.executors = new HashSet<ExecutorInfo>(executors);
+    this.executors = new ArrayList<ExecutorInfo>(executors);
     this.port = port;
     this.processId = processId;
 
@@ -53,7 +55,7 @@ public class WorkerLocalHeartbeat implements Serializable {
     return stormId;
   }
 
-  public Set<ExecutorInfo> getTaskIds() {
+  public List<ExecutorInfo> getTaskIds() {
     return executors;
   }
 

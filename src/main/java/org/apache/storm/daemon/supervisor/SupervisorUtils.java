@@ -44,6 +44,7 @@ import org.apache.storm.daemon.worker.heartbeat.WorkerLocalHeartbeat;
 import org.apache.storm.util.CoreUtil;
 import org.apache.storm.util.thread.RunnableCallback;
 import org.apache.thrift7.TException;
+import backtype.storm.generated.LocalAssignment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -125,10 +126,10 @@ public class SupervisorUtils {
       }
       if (portToLocalAssignment.containsKey(port)) {
         LocalAssignment la = portToLocalAssignment.get(port);
-        Set<ExecutorInfo> taskIds = la.getExecutors();
+        List<ExecutorInfo> taskIds = la.get_executors();
         taskIds.add(executor);
       } else {
-        Set<ExecutorInfo> taskIds = new HashSet<ExecutorInfo>();
+        List<ExecutorInfo> taskIds = new ArrayList<ExecutorInfo>();
         taskIds.add(executor);
         LocalAssignment la = new LocalAssignment(stormId, taskIds);
         portToLocalAssignment.put(port, la);
@@ -283,16 +284,16 @@ public class SupervisorUtils {
     if (localAssignment == null) {
       isMatch = false;
     } else if (!workerHeartbeat.getStormId().equals(
-        localAssignment.getStormId())) {
+        localAssignment.get_topology_id())) {
       // topology id not equal
       LOG.info("topology id not equal whb={} ,localAssignment={} ",
-          workerHeartbeat.getStormId(), localAssignment.getStormId());
+          workerHeartbeat.getStormId(), localAssignment.get_topology_id());
       isMatch = false;
     } else if (!(workerHeartbeat.getTaskIds().equals(localAssignment
-        .getExecutors()))) {
+        .get_executors()))) {
       // task-id isn't equal
       LOG.info("task-id isn't equal whb={} ,localAssignment={}",
-          workerHeartbeat.getTaskIds(), localAssignment.getExecutors());
+          workerHeartbeat.getTaskIds(), localAssignment.get_executors());
       isMatch = false;
     }
     return isMatch;
@@ -741,7 +742,7 @@ public class SupervisorUtils {
       Map<Integer, LocalAssignment> newAssignment) {
     Set<String> assignedStormIds = new HashSet<String>();
     for (LocalAssignment entry : newAssignment.values()) {
-      assignedStormIds.add(entry.getStormId());
+      assignedStormIds.add(entry.get_topology_id());
     }
     return assignedStormIds;
   }

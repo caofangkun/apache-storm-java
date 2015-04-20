@@ -31,18 +31,19 @@ import org.apache.storm.cluster.StormClusterState;
 import org.apache.storm.config.ConfigUtil;
 import org.apache.storm.daemon.common.Assignment;
 import org.apache.storm.daemon.common.Common;
-import org.apache.storm.daemon.supervisor.LocalAssignment;
 import org.apache.storm.daemon.supervisor.ShutdownWork;
 import org.apache.storm.daemon.supervisor.StateHeartbeat;
 import org.apache.storm.daemon.supervisor.SupervisorData;
 import org.apache.storm.daemon.supervisor.SupervisorUtils;
 import org.apache.storm.daemon.worker.WorkerStatus;
 import org.apache.storm.daemon.worker.heartbeat.WorkerLocalHeartbeat;
+import org.apache.storm.localstate.LocalStateUtil;
 import org.apache.storm.util.CoreUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
+import backtype.storm.generated.LocalAssignment;
 import backtype.storm.utils.LocalState;
 import backtype.storm.utils.MutableLong;
 import backtype.storm.utils.Time;
@@ -260,9 +261,8 @@ public class SyncProcessesEvent extends ShutdownWork {
     for (Map.Entry<Integer, String> entry : newWorkerIds.entrySet()) {
       newWorkers.put(entry.getValue(), entry.getKey());
     }
-
-    localState.put(Common.LS_APPROVED_WORKERS, newWorkers);
-
+    
+    LocalStateUtil.lsApprovedWorkers(localState, newWorkers);
     // check storm toplolgy code dir exists before launching workers
     downloadCodeIfNotExisted(reassignExecutors);
     for (Map.Entry<Integer, LocalAssignment> entry : reassignExecutors
@@ -276,7 +276,7 @@ public class SyncProcessesEvent extends ShutdownWork {
           "Launching worker with assignment {} for this supervisor {} on port {} with id {}",
           objs);
       SupervisorUtils.launchWorker(conf, supervisorData,
-          assignment.getStormId(), port, id);
+          assignment.get_topology_id(), port, id);
     }
 
     try {
@@ -296,7 +296,7 @@ public class SyncProcessesEvent extends ShutdownWork {
         supervisorData.getAssignmentVersions();
     for (Map.Entry<Integer, LocalAssignment> assignment : reassignExecutors
         .entrySet()) {
-      String stormId = assignment.getValue().getStormId();
+      String stormId = assignment.getValue().get_topology_id();
       Assignment assignmentInfo = null;
       if (null != cachedAssignmentInfo
           && cachedAssignmentInfo.containsKey(stormId)) {

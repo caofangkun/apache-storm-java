@@ -1,5 +1,6 @@
 package org.apache.storm.daemon.worker.threads;
 
+import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.storm.ClojureClass;
@@ -48,7 +49,7 @@ public class ActivateWorkerWhenAllConnectionsReady extends RunnableCallback {
    */
   @ClojureClass(className = "backtype.storm.daemon.worker#all-connections-ready")
   public boolean allConnectionsReady(WorkerData worker) {
-    ConcurrentHashMap<WorkerSlot, IConnection> connections =
+    HashMap<WorkerSlot, IConnection> connections =
         worker.getCachedNodeportToSocket();
     for (IConnection connection : connections.values()) {
       if (!isConnectionReady(connection)) {
