@@ -17,7 +17,6 @@
  */
 package org.apache.storm.daemon.supervisor.sync;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -141,8 +140,7 @@ public class SynchronizeSupervisorEvent extends RunnableCallback {
       Set<Integer> differencePorts = new HashSet<Integer>();
       if (existingAssignment != null) {
         differencePorts =
-            Sets.difference(existingAssignment.keySet(),
-                newAssignment.keySet());
+            Sets.difference(existingAssignment.keySet(), newAssignment.keySet());
       }
       for (Integer port : differencePorts) {
         isupervisor.killedWorker(port);

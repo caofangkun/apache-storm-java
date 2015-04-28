@@ -27,7 +27,6 @@ import java.util.Set;
 import org.apache.storm.ClojureClass;
 import org.apache.storm.daemon.common.Common;
 import org.apache.storm.util.NetWorkUtils;
-import org.apache.thrift7.TBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,7 +87,7 @@ public class StandaloneSupervisor implements ISupervisor {
     Set<Integer> ports = new HashSet<Integer>();
     try {
       ports = (Set<Integer>) localState.get(Common.LS_SLOTS);
-      //TODO fix this bug
+      // TODO fix this bug
       if (null == ports || ports.isEmpty()) {
         ports = new HashSet<Integer>();
         List<Integer> portList =
