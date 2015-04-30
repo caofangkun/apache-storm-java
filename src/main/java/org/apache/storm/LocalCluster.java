@@ -38,6 +38,7 @@ import org.apache.storm.daemon.nimbus.threads.MonitorRunnable;
 import org.apache.storm.daemon.supervisor.SupervisorManager;
 import org.apache.storm.daemon.supervisor.psim.ProcessSimulator;
 import org.apache.storm.daemon.worker.messaging.local.LocalContext;
+import org.apache.storm.testing.Testing;
 import org.apache.storm.util.CoreUtil;
 import org.apache.storm.zk.InprocessZookeeper;
 import org.apache.thrift7.TException;
@@ -145,8 +146,7 @@ public class LocalCluster implements ILocalCluster {
     this.stormClusterState = new StormZkClusterState(daemonConf);
 
     for (int i = 0; i < this.supervisors; i++) {
-      backtype.storm.testing.Testing.addSupervisor(this,
-          this.portsPerSupervisor, new HashMap(), null);
+      Testing.addSupervisor(this, this.portsPerSupervisor, new HashMap(), null);
     }
 
     state = new HashMap<String, Object>();
