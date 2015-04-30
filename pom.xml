@@ -79,6 +79,17 @@
                         <artifactId>args4j</artifactId>
                         <version>${args4j.version}</version>
                 </dependency>
+                <dependency>
+                        <groupId>org.mortbay.jetty</groupId>
+                        <artifactId>jetty</artifactId>
+                        <version>6.1.26</version>
+                        <exclusions>
+                                <exclusion>
+                                        <groupId>org.mortbay.jetty</groupId>
+                                        <artifactId>servlet-api</artifactId>
+                                </exclusion>
+                        </exclusions>
+                </dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
