@@ -32,9 +32,6 @@ export LOG_LEVEL=WARN
 # We should concern that Travis CI could be very slow cause it uses VM
 export STORM_TEST_TIMEOUT_MS=100000
 
-#install latest apache storm core jar
-mvn install:install-file -DgroupId=org.apache.storm -DartifactId=storm-core -Dversion=0.11.0-SNAPSHOT -Dpackaging=jar -Dfile=../apache-storm/storm-core-0.11.0-SNAPSHOT.jar
-
 # We now lean on Travis CI's implicit behavior, ```mvn clean install -DskipTests``` before running script
 mvn test -fae
 
