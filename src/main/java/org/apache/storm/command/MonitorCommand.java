@@ -20,12 +20,13 @@ package org.apache.storm.command;
 import java.util.Map;
 
 import org.apache.storm.ClojureClass;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
 
 import backtype.storm.utils.Monitor;
 import backtype.storm.utils.NimbusClient;
 import backtype.storm.utils.Utils;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.CommandLineParser;
 
 /**
  * """Syntax: [storm monitor topology-name [-i interval-secs] [-m component-id]
@@ -76,7 +77,7 @@ public class MonitorCommand {
 
   @SuppressWarnings("rawtypes")
   public void realMain(String[] args) throws Exception {
-    CommandLineParser parser = new CmdLineParser(this);
+    CmdLineParser parser = new CmdLineParser(this);
     parser.setUsageWidth(80);
     try {
       parser.parseArgument(args);

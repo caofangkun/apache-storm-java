@@ -24,6 +24,9 @@ import java.util.Properties;
 
 import org.apache.storm.ClojureClass;
 import org.apache.storm.util.CoreUtil;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
 
 import backtype.storm.generated.RebalanceOptions;
 import backtype.storm.utils.NimbusClient;
@@ -61,7 +64,7 @@ public class rebalance {
 
   @SuppressWarnings("rawtypes")
   public void realMain(String[] args) throws Exception {
-    CommandLineParser parser = new CmdLineParser(this);
+    CmdLineParser parser = new CmdLineParser(this);
     parser.setUsageWidth(80);
     try {
       parser.parseArgument(args);
