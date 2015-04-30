@@ -20,7 +20,6 @@ package org.apache.storm.daemon.worker;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
 import org.apache.storm.ClojureClass;
@@ -36,14 +35,13 @@ import org.slf4j.LoggerFactory;
 import backtype.storm.daemon.Shutdownable;
 import backtype.storm.messaging.IConnection;
 import backtype.storm.messaging.IContext;
-import backtype.storm.scheduler.WorkerSlot;
 import backtype.storm.task.WorkerTopologyContext;
 
 @ClojureClass(className = "backtype.storm.daemon.worker#mk-worker#ret")
 public class WorkerShutdown implements ShutdownableDameon {
   private static Logger LOG = LoggerFactory.getLogger(WorkerShutdown.class);
   private List<ExecutorShutdown> executors;
-  private HashMap<WorkerSlot, IConnection> cachedNodeportSocket;
+  private HashMap<String, IConnection> cachedNodeportSocket;
   private Shutdownable workerReceiveThreadShutdown;
   private IContext context;
   private AsyncLoopThread[] threads;

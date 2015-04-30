@@ -49,7 +49,7 @@ public class ActivateWorkerWhenAllConnectionsReady extends RunnableCallback {
    */
   @ClojureClass(className = "backtype.storm.daemon.worker#all-connections-ready")
   public boolean allConnectionsReady(WorkerData worker) {
-    HashMap<WorkerSlot, IConnection> connections =
+    HashMap<String, IConnection> connections =
         worker.getCachedNodeportToSocket();
     for (IConnection connection : connections.values()) {
       if (!isConnectionReady(connection)) {

@@ -82,7 +82,7 @@ public class WorkerData implements Serializable {
   private ClusterState clusterState;
   private StormClusterState stormClusterState;
   private SortedSet<Integer> taskids;
-  private volatile HashMap<WorkerSlot, IConnection> cachedNodeportToSocket;
+  private volatile HashMap<String, IConnection> cachedNodeportToSocket;
   private volatile ConcurrentHashMap<Integer, WorkerSlot> cachedTaskToNodeport;
   private Set<ExecutorInfo> executors;
   private ConcurrentHashMap<Integer, DisruptorQueue> innerTaskTransfer;
@@ -142,7 +142,7 @@ public class WorkerData implements Serializable {
     this.componentToSortedTasks = mkComponentToSortedTasks(tasksToComponent);
     this.endpointSocketLock = new ReentrantReadWriteLock();
     this.cachedNodeportToSocket =
-        new HashMap<WorkerSlot, IConnection>();
+        new HashMap<String, IConnection>();
     this.cachedTaskToNodeport = new ConcurrentHashMap<Integer, WorkerSlot>();
     this.transferQueue = mkTransferQueue();
     this.executorReceiveQueueMap =
@@ -296,12 +296,12 @@ public class WorkerData implements Serializable {
     return taskids;
   }
 
-  public HashMap<WorkerSlot, IConnection> getCachedNodeportToSocket() {
+  public HashMap<String, IConnection> getCachedNodeportToSocket() {
     return cachedNodeportToSocket;
   }
 
   public void setCachedNodeportToSocket(
-      HashMap<WorkerSlot, IConnection> cachedNodeportToSocket) {
+      HashMap<String, IConnection> cachedNodeportToSocket) {
     this.cachedNodeportToSocket = cachedNodeportToSocket;
   }
 

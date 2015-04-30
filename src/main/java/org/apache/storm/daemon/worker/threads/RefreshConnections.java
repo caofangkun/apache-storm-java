@@ -52,7 +52,7 @@ public class RefreshConnections extends RunnableCallback {
   private StormClusterState stormClusterState;
   private String stormId;
   private Set<Integer> outboundTasks;
-  private HashMap<WorkerSlot, IConnection> cachedNodePortToSocket;
+  private HashMap<String, IConnection> cachedNodePortToSocket;
   private IContext context;
   private ReentrantReadWriteLock.WriteLock endpointSocketWriteLock;
   private MutableLong retryCount;
@@ -127,7 +127,12 @@ public class RefreshConnections extends RunnableCallback {
 
       Set<Integer> neededTasks = neededAssignment.keySet();
 
-      Set<WorkerSlot> currentConnections = cachedNodePortToSocket.keySet();
+      Set<WorkerSlot> currentConnections  = new HashSet<WorkerSlot>();
+      Set <String>  currentConnectionsStr = cachedNodePortToSocket.keySet();
+      for (String nodeToPort : currentConnectionsStr) {
+       String[] tmp =  nodeToPort.split(":");
+        currentConnections.add(new WorkerSlot(tmp[0], Integer.valueOf(tmp[1])));
+      }
       Set<WorkerSlot> newConnections =
           CoreUtil.set_difference(neededConnections, currentConnections);
 
@@ -140,7 +145,7 @@ public class RefreshConnections extends RunnableCallback {
         String host = nodeToHost.get(nodePort.getNodeId());
         int port = nodePort.getPort();
         IConnection conn = context.connect(stormId, host, port);
-        cachedNodePortToSocket.put(nodePort, conn);
+        cachedNodePortToSocket.put(nodePort.toString(), conn);
         LOG.info("Add connection to host:{}, port:{} ", host, port);
       }
 

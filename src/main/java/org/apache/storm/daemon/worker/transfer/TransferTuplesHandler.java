@@ -50,7 +50,7 @@ public class TransferTuplesHandler extends RunnableCallback implements
   private final static Logger LOG = LoggerFactory
       .getLogger(TransferTuplesHandler.class);
   private DisruptorQueue transferQueue;
-  private HashMap<WorkerSlot, IConnection> nodeportToSocket;
+  private HashMap<String, IConnection> nodeportToSocket;
   private AtomicBoolean workerActive;
   private ReentrantReadWriteLock.ReadLock endpointSocketReadLock;
   private TransferDrainer drainer;
@@ -83,7 +83,7 @@ public class TransferTuplesHandler extends RunnableCallback implements
     if (packets == null) {
       return;
     }
-    drainer.add((HashMap<WorkerSlot, ArrayList<TaskMessage>>) packets);
+    drainer.add((HashMap<String, ArrayList<TaskMessage>>) packets);
     if (endOfBatch) {
       endpointSocketReadLock.lock();
       try {
