@@ -10,42 +10,32 @@
 	<name>storm-core-java</name>
 	<url>http://maven.apache.org</url>
 
-	<repositories>
-		<repository>
-			<releases>
-				<enabled>false</enabled>
-				<updatePolicy>always</updatePolicy>
-				<checksumPolicy>warn</checksumPolicy>
-			</releases>
-			<snapshots>
-				<enabled>true</enabled>
-				<updatePolicy>never</updatePolicy>
-				<checksumPolicy>fail</checksumPolicy>
-			</snapshots>
-			<id>ossrh</id>
-			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-			<layout>default</layout>
-		</repository>
-		<repository>
-			<id>central</id>
-			<url>http://repo1.maven.org/maven2/</url>
-		</repository>
-		<repository>
-			<id>clojars</id>
-			<url>https://clojars.org/repo/</url>
-		</repository>
-	</repositories>
+      <repositories>
+                <repository>
+                        <id>ossrh</id>
+                        <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+                </repository>
 
-	<distributionManagement>
-		<snapshotRepository>
-			<id>ossrh</id>
-			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
-		</snapshotRepository>
-		<repository>
-			<id>ossrh</id>
-			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-		</repository>
-	</distributionManagement>
+                <repository>
+                        <id>central</id>
+                        <url>http://repo1.maven.org/maven2/</url>
+                </repository>
+                <repository>
+                        <id>clojars</id>
+                        <url>https://clojars.org/repo/</url>
+                </repository>
+        </repositories>
+
+        <distributionManagement>
+                <snapshotRepository>
+                        <id>ossrh</id>
+                        <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+                </snapshotRepository>
+                <repository>
+                        <id>ossrh</id>
+                        <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+                </repository>
+        </distributionManagement>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -131,7 +121,6 @@
 			<groupId>com.github.caofangkun</groupId>
 			<artifactId>version-maven-plugin</artifactId>
 			<version>0.1-SNAPSHOT</version>
-			<type>maven-plugin</type>
 		</dependency>
 	</dependencies>
 	<build>
@@ -144,30 +133,28 @@
 				<filtering>true</filtering>
 			</resource>
 		</resources>
-		<pluginManagement>
-			<plugins>
-				<plugin>
-					<groupId>com.github.caofangkun</groupId>
-					<artifactId>version-maven-plugin</artifactId>
-					<executions>
-						<execution>
-							<id>version-info</id>
-							<phase>generate-resources</phase>
-							<goals>
-								<goal>version-info</goal>
-							</goals>
-							<configuration>
-								<source>
-									<directory>${basedir}/src/</directory>
-									<includes>
-										<include>src/**/*.java</include>
-									</includes>
-								</source>
-							</configuration>
-						</execution>
-					</executions>
-				</plugin>
-			</plugins>
-		</pluginManagement>
+		<plugins>
+			<plugin>
+				<groupId>com.github.caofangkun</groupId>
+				<artifactId>version-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>version-info</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>version-info</goal>
+						</goals>
+						<configuration>
+							<source>
+								<directory>${basedir}/src/</directory>
+								<includes>
+									<include>src/**/*.java</include>
+								</includes>
+							</source>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
 	</build>
 </project>
