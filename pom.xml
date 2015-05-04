@@ -37,7 +37,7 @@
 			<layout>default</layout>
 		</repository>
 	</repositories>
-	
+
 	<pluginRepositories>
 		<pluginRepository>
 			<id>oss-snapshots</id>
@@ -147,6 +147,12 @@
 			<artifactId>version-maven-plugin</artifactId>
 			<version>0.1-SNAPSHOT</version>
 			<type>maven-plugin</type>
+		</dependency>
+		<dependency>
+			<groupId>com.google.code.findbugs</groupId>
+			<artifactId>jsr305</artifactId>
+                        <version>3.0.0</version>
+			<optional>true</optional><!-- needed only for annotations -->
 		</dependency>
 	</dependencies>
 	<build>
