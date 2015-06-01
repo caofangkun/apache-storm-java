@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.storm.ClojureClass;
 import org.apache.storm.daemon.worker.WorkerData;
@@ -32,7 +31,6 @@ import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
 import backtype.storm.messaging.TaskMessage;
-import backtype.storm.scheduler.WorkerSlot;
 import backtype.storm.serialization.KryoTupleSerializer;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.TupleImpl;
@@ -67,7 +65,8 @@ public class TransferFn {
       ArrayList<TuplePair> tupleBatch) {
     if (trySerializeLocal) {
       LOG.warn("WILL TRY TO SERIALIZE ALL TUPLES (Turn off TOPOLOGY-TESTING-ALWAYS-TRY-SERIALIZE for production)");
-      trySerializeLocalTransferFn(serializer, tupleBatch);
+      assertCanSerialize(serializer, tupleBatch);
+      transferFn(serializer, tupleBatch);
     } else {
       transferFn(serializer, tupleBatch);
     }
@@ -80,23 +79,22 @@ public class TransferFn {
       return;
     }
     List<TuplePair> local = new ArrayList<TuplePair>();
-    HashMap<WorkerSlot, ArrayList<TaskMessage>> remoteMap =
-        new HashMap<WorkerSlot, ArrayList<TaskMessage>>();
+    HashMap<Integer, ArrayList<TaskMessage>> remoteMap =
+        new HashMap<Integer, ArrayList<TaskMessage>>();
     for (TuplePair pair : tupleBatch) {
       Integer task = pair.getOutTask();
-      if (localTasks.contains(task)) {
-        local.add(pair);
+      if (task == null) {
+        LOG.warn("Can't transfer tuple - task value is nil.");
       } else {
-        // Using java objects directly to avoid performance issues in java code
-        ConcurrentHashMap<Integer, WorkerSlot> taskToNodePort =
-            workerData.getCachedTaskToNodeport();
-        WorkerSlot nodePort = taskToNodePort.get(task);
-        // if nodePort is null, dropped messages
-        if (null != nodePort) {
-          if (!remoteMap.containsKey(nodePort)) {
-            remoteMap.put(nodePort, new ArrayList<TaskMessage>());
+        if (localTasks.contains(task)) {
+          local.add(pair);
+        } else {
+          // Using java objects directly to avoid performance issues in java
+          // code
+          if (!remoteMap.containsKey(task)) {
+            remoteMap.put(task, new ArrayList<TaskMessage>());
           }
-          ArrayList<TaskMessage> remote = remoteMap.get(nodePort);
+          ArrayList<TaskMessage> remote = remoteMap.get(task);
           try {
             TaskMessage message =
                 new TaskMessage(task, serializer.serialize((TupleImpl) pair
@@ -117,13 +115,6 @@ public class TransferFn {
     }
   }
 
-  @ClojureClass(className = "backtype.storm.daemon.worker#mk-transfer-fn#try-serialize-local#fn")
-  public void trySerializeLocalTransferFn(KryoTupleSerializer serializer,
-      ArrayList<TuplePair> tupleBatch) {
-    assertCanSerialize(serializer, tupleBatch);
-    transfer(serializer, tupleBatch);
-  }
-
   /**
    * Check that all of the tuples can be serialized by serializing them.
    * 
@@ -134,7 +125,6 @@ public class TransferFn {
   private void assertCanSerialize(KryoTupleSerializer serializer,
       ArrayList<TuplePair> tupleBatch) {
     for (TuplePair pair : tupleBatch) {
-      // TODO
       Tuple tuple = (Tuple) pair.getOutTuple();
       serializer.serialize(tuple);
     }
