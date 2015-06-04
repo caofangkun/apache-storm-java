@@ -19,19 +19,16 @@ package org.apache.storm.daemon.worker.messaging.loader;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.storm.ClojureClass;
 import org.apache.storm.daemon.worker.SystemExitKillFn;
 import org.apache.storm.daemon.worker.WorkerData;
 import org.apache.storm.daemon.worker.transfer.TransferLocalFn;
-import org.apache.storm.util.CoreUtil;
 import org.apache.storm.util.thread.AsyncLoopThread;
 import org.apache.storm.util.thread.RunnableCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.Config;
 import backtype.storm.daemon.Shutdownable;
 import backtype.storm.messaging.IConnection;
 import backtype.storm.messaging.IContext;
@@ -41,8 +38,6 @@ public class WorkerReceiveThreadShutdown {
   private final static Logger LOG = LoggerFactory
       .getLogger(WorkerReceiveThreadShutdown.class);
 
-  @SuppressWarnings("rawtypes")
-  private Map stormConf;
   private String supervisorId;
   private Integer port;
   private IContext context;
@@ -52,7 +47,6 @@ public class WorkerReceiveThreadShutdown {
 
   public WorkerReceiveThreadShutdown(WorkerData workerData) {
     this.workerData = workerData;
-    this.stormConf = workerData.getStormConf();
     this.supervisorId = workerData.getAssignmentId();
     this.port = workerData.getPort();
     this.context = workerData.getContext();
@@ -65,14 +59,8 @@ public class WorkerReceiveThreadShutdown {
     LOG.info("Launching receive-thread for {}:{}", supervisorId, port);
 
     List<AsyncLoopThread> vthreads =
-        mkReceiveThreads(
-            workerData,
-            stormId,
-            port,
-            socket,
+        mkReceiveThreads(workerData, stormId, port, socket,
             workerData.getTransferLocalFn(),
-            CoreUtil.parseInt(
-                stormConf.get(Config.TOPOLOGY_RECEIVER_BUFFER_SIZE), 8),
             workerData.getReceiverThreadCount());
     return new ReceiveThreadShutdown(workerData, stormId, context, vthreads,
         port);
@@ -82,12 +70,12 @@ public class WorkerReceiveThreadShutdown {
   @ClojureClass(className = "backtype.storm.messaging.loader#mk-receive-threads")
   private List<AsyncLoopThread> mkReceiveThreads(WorkerData workerData,
       String stormId, int port, IConnection socket,
-      TransferLocalFn transferLocalFn, int maxBufferSize, Integer threadCount) {
+      TransferLocalFn transferLocalFn, Integer threadCount) {
     List<AsyncLoopThread> ret = new ArrayList<AsyncLoopThread>();
     for (int threadId = 0; threadId < threadCount; threadId++) {
       RunnableCallback receiveThread =
           new ReceiveThreadCallback(workerData, stormId, port, socket,
-              transferLocalFn, maxBufferSize, threadId);
+              transferLocalFn, threadId);
       String threadName = "worker-receiver-thread-" + threadId;
       AsyncLoopThread vthread =
           new AsyncLoopThread(receiveThread, true, new SystemExitKillFn(

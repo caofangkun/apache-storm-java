@@ -36,6 +36,27 @@
 			</snapshots>
 			<layout>default</layout>
 		</repository>
+		<repository>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+			<id>central</id>
+			<url>http://repo1.maven.org/maven2/</url>
+		</repository>
+		<repository>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+			<id>clojars</id>
+			<url>https://clojars.org/repo/</url>
+		</repository>
+
 	</repositories>
 
 	<pluginRepositories>
@@ -151,7 +172,7 @@
 		<dependency>
 			<groupId>com.google.code.findbugs</groupId>
 			<artifactId>jsr305</artifactId>
-                        <version>3.0.0</version>
+			<version>3.0.0</version>
 			<optional>true</optional><!-- needed only for annotations -->
 		</dependency>
 	</dependencies>

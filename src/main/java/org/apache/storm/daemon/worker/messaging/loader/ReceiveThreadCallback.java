@@ -50,7 +50,7 @@ public class ReceiveThreadCallback extends RunnableCallback {
 
   public ReceiveThreadCallback(WorkerData workerData, String topologyId,
       int port, IConnection socket, TransferLocalFn transferLocalFn,
-      int maxBufferSize, int threadId) {
+      int threadId) {
     this.topologyId = topologyId;
     this.threadId = threadId;
     this.port = port;

@@ -50,6 +50,7 @@ public class TransferTuplesHandler extends RunnableCallback implements
   private final static Logger LOG = LoggerFactory
       .getLogger(TransferTuplesHandler.class);
   private DisruptorQueue transferQueue;
+  private HashMap<Integer, String> taskToNodePort;
   private HashMap<String, IConnection> nodeportToSocket;
   private AtomicBoolean workerActive;
   private ReentrantReadWriteLock.ReadLock endpointSocketReadLock;
@@ -60,6 +61,7 @@ public class TransferTuplesHandler extends RunnableCallback implements
   // automagically to prevent latency issues
   public TransferTuplesHandler(WorkerData workerData) {
     this.transferQueue = workerData.getTransferQueue();
+    this.taskToNodePort = workerData.getCachedTaskToNodeport();
     this.nodeportToSocket = workerData.getCachedNodeportToSocket();
     this.workerActive = workerData.getStormActiveAtom();
     this.endpointSocketReadLock = workerData.getEndpointSocketLock().readLock();
@@ -83,11 +85,11 @@ public class TransferTuplesHandler extends RunnableCallback implements
     if (packets == null) {
       return;
     }
-    drainer.add((HashMap<String, ArrayList<TaskMessage>>) packets);
+    drainer.add((HashMap<Integer, ArrayList<TaskMessage>>) packets);
     if (endOfBatch) {
       endpointSocketReadLock.lock();
       try {
-        drainer.send(nodeportToSocket);
+        drainer.send(taskToNodePort, nodeportToSocket);
       } finally {
         endpointSocketReadLock.unlock();
       }

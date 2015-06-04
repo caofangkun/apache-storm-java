@@ -103,13 +103,12 @@ public class RefreshConnections extends RunnableCallback {
       Map<Integer, WorkerSlot> taskToNodePort =
           Common.toTaskToNodePort(executorInfoToNodePort);
 
-      ConcurrentHashMap<Integer, WorkerSlot> myAssignment =
-          new ConcurrentHashMap<Integer, WorkerSlot>();
+      HashMap<Integer, String> myAssignment = new HashMap<Integer, String>();
       Map<Integer, WorkerSlot> neededAssignment =
           new ConcurrentHashMap<Integer, WorkerSlot>();
       for (Integer taskId : outboundTasks) {
         if (taskToNodePort.containsKey(taskId)) {
-          myAssignment.put(taskId, taskToNodePort.get(taskId));
+          myAssignment.put(taskId, taskToNodePort.get(taskId).toString());
           neededAssignment.put(taskId, taskToNodePort.get(taskId));
         }
       }
@@ -127,10 +126,10 @@ public class RefreshConnections extends RunnableCallback {
 
       Set<Integer> neededTasks = neededAssignment.keySet();
 
-      Set<WorkerSlot> currentConnections  = new HashSet<WorkerSlot>();
-      Set <String>  currentConnectionsStr = cachedNodePortToSocket.keySet();
+      Set<WorkerSlot> currentConnections = new HashSet<WorkerSlot>();
+      Set<String> currentConnectionsStr = cachedNodePortToSocket.keySet();
       for (String nodeToPort : currentConnectionsStr) {
-       String[] tmp =  nodeToPort.split(":");
+        String[] tmp = nodeToPort.split(":");
         currentConnections.add(new WorkerSlot(tmp[0], Integer.valueOf(tmp[1])));
       }
       Set<WorkerSlot> newConnections =

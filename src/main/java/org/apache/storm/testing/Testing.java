@@ -65,7 +65,6 @@ import backtype.storm.messaging.IContext;
 import backtype.storm.scheduler.INimbus;
 import backtype.storm.scheduler.ISupervisor;
 import backtype.storm.task.TopologyContext;
-import backtype.storm.testing.CompletableSpout;
 import backtype.storm.testing.FeederSpout;
 import backtype.storm.testing.FixedTuple;
 import backtype.storm.testing.FixedTupleSpout;

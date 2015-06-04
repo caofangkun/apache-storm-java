@@ -83,7 +83,7 @@ public class WorkerData implements Serializable {
   private StormClusterState stormClusterState;
   private SortedSet<Integer> taskids;
   private volatile HashMap<String, IConnection> cachedNodeportToSocket;
-  private volatile ConcurrentHashMap<Integer, WorkerSlot> cachedTaskToNodeport;
+  private volatile HashMap<Integer, String> cachedTaskToNodeport;
   private Set<ExecutorInfo> executors;
   private ConcurrentHashMap<Integer, DisruptorQueue> innerTaskTransfer;
   private Map<Integer, String> tasksToComponent;
@@ -141,9 +141,8 @@ public class WorkerData implements Serializable {
         WorkerUtils.componentToStreamToFields(systemTopology);
     this.componentToSortedTasks = mkComponentToSortedTasks(tasksToComponent);
     this.endpointSocketLock = new ReentrantReadWriteLock();
-    this.cachedNodeportToSocket =
-        new HashMap<String, IConnection>();
-    this.cachedTaskToNodeport = new ConcurrentHashMap<Integer, WorkerSlot>();
+    this.cachedNodeportToSocket = new HashMap<String, IConnection>();
+    this.cachedTaskToNodeport = new HashMap<Integer, String>();
     this.transferQueue = mkTransferQueue();
     this.executorReceiveQueueMap =
         WorkerUtils.mkReceiveQueueMap(stormConf, executors);
@@ -158,8 +157,8 @@ public class WorkerData implements Serializable {
     this.userSharedResources = WorkerUtils.mkUserResources(conf);
     this.transferLocalFn = new TransferLocalFn(this);
     this.receiverThreadCount =
-        CoreUtil.parseInt(
-            stormConf.get(Config.WORKER_RECEIVER_THREAD_COUNT), 1);
+        CoreUtil
+            .parseInt(stormConf.get(Config.WORKER_RECEIVER_THREAD_COUNT), 1);
     this.transferFn = new TransferFn(this);
     this.assignmentVersions = new HashMap<String, Assignment>();
 
@@ -174,8 +173,8 @@ public class WorkerData implements Serializable {
   @ClojureClass(className = "backtype.storm.daemon.worker#worker-data#transfer-queue")
   private DisruptorQueue mkTransferQueue() {
     int bufferSize =
-        CoreUtil.parseInt(
-            stormConf.get(Config.TOPOLOGY_TRANSFER_BUFFER_SIZE), 2048);
+        CoreUtil.parseInt(stormConf.get(Config.TOPOLOGY_TRANSFER_BUFFER_SIZE),
+            2048);
     WaitStrategy waitStrategy =
         (WaitStrategy) Utils.newInstance((String) stormConf
             .get(Config.TOPOLOGY_DISRUPTOR_WAIT_STRATEGY));
@@ -391,12 +390,12 @@ public class WorkerData implements Serializable {
     this.executorReceiveQueueMap = executorReceiveQueueMap;
   }
 
-  public ConcurrentHashMap<Integer, WorkerSlot> getCachedTaskToNodeport() {
+  public HashMap<Integer, String> getCachedTaskToNodeport() {
     return cachedTaskToNodeport;
   }
 
   public void setCachedTaskToNodeport(
-      ConcurrentHashMap<Integer, WorkerSlot> cachedTaskToNodeport) {
+      HashMap<Integer, String> cachedTaskToNodeport) {
     this.cachedTaskToNodeport = cachedTaskToNodeport;
   }
 
