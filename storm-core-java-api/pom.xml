@@ -36,6 +36,26 @@
 			</snapshots>
 			<layout>default</layout>
 		</repository>
+		<repository>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+			<id>central</id>
+			<url>http://repo1.maven.org/maven2/</url>
+		</repository>
+		<repository>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+			<id>clojars</id>
+			<url>https://clojars.org/repo/</url>
+		</repository>
 	</repositories>
 
 	<pluginRepositories>
@@ -382,7 +402,6 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-
 
 	<build>
 		<resources>
