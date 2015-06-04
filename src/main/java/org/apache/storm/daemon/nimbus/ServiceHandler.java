@@ -195,7 +195,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
   @ClojureClass(className = "backtype.storm.daemon.nimbus#service-handler#submitTopology")
   public void submitTopology(String stormName, String uploadedJarLocation,
       String serializedConf, StormTopology topology)
-      throws AlreadyAliveException, InvalidTopologyException, TException {
+      throws AlreadyAliveException, InvalidTopologyException {
     SubmitOptions options = new SubmitOptions(TopologyInitialStatus.ACTIVE);
     this.submitTopologyWithOpts(stormName, uploadedJarLocation, serializedConf,
         topology, options);
@@ -203,14 +203,14 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 
   @Override
   @ClojureClass(className = "backtype.storm.daemon.nimbus#service-handler#killTopology")
-  public void killTopology(String name) throws NotAliveException, TException {
+  public void killTopology(String name) throws NotAliveException {
     this.killTopologyWithOpts(name, new KillOptions());
   }
 
   @Override
   @ClojureClass(className = "backtype.storm.daemon.nimbus#service-handler#killTopologyWithOpts")
   public void killTopologyWithOpts(String stormName, KillOptions options)
-      throws NotAliveException, TException {
+      throws NotAliveException {
     try {
       NimbusUtils.checkStormActive(nimbus, stormName, true);
       Integer wait_amt = null;
@@ -222,14 +222,14 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
     } catch (Throwable e) {
       String errMsg = "Failed to kill topology " + stormName;
       LOG.error(errMsg, e);
-      throw new TException(errMsg);
+      throw new NotAliveException();
     }
   }
 
   @Override
   @ClojureClass(className = "backtype.storm.daemon.nimbus#service-handler#rebalance")
   public void rebalance(String stormName, RebalanceOptions options)
-      throws NotAliveException,  InvalidTopologyException {
+      throws NotAliveException, InvalidTopologyException {
     try {
       NimbusUtils.checkStormActive(nimbus, stormName, true);
       Integer waitAmt = null;
@@ -265,26 +265,26 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 
   @Override
   @ClojureClass(className = "backtype.storm.daemon.nimbus#service-handler#activate")
-  public void activate(String stormName) throws NotAliveException, TException {
+  public void activate(String stormName) throws NotAliveException {
     try {
       NimbusUtils.transitionName(nimbus, stormName, true, StatusType.activate);
     } catch (Throwable e) {
       String errMsg = "Failed to active topology " + stormName;
       LOG.error(errMsg, e);
-      throw new TException(errMsg);
+      throw new NotAliveException();
     }
   }
 
   @Override
   @ClojureClass(className = "backtype.storm.daemon.nimbus#service-handler#deactivate")
-  public void deactivate(String stormName) throws NotAliveException, TException {
+  public void deactivate(String stormName) throws NotAliveException {
     try {
       NimbusUtils
           .transitionName(nimbus, stormName, true, StatusType.inactivate);
     } catch (Throwable e) {
       String errMsg = "Failed to deactivate topology " + stormName;
       LOG.error(errMsg, e);
-      throw new TException(errMsg);
+      throw new NotAliveException();
     }
   }
 
@@ -293,7 +293,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
   @ClojureClass(className = "backtype.storm.daemon.nimbus#service-handler#uploadNewCredentials")
   public void uploadNewCredentials(String stormName, Credentials credentials)
       throws NotAliveException, InvalidTopologyException,
-      AuthorizationException, TException {
+      AuthorizationException {
     StormClusterState stormClusterState = nimbus.getStormClusterState();
     try {
       String stormId = Common.getStormId(stormClusterState, stormName);
@@ -308,14 +308,14 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
         stormClusterState.setCredentials(stormId, creds, topologyConf);
       }
     } catch (Exception e) {
-      throw new TException(e);
+      throw new NotAliveException();
     }
   }
 
   @SuppressWarnings({ "unchecked", "deprecation" })
   @Override
   @ClojureClass(className = "backtype.storm.daemon.nimbus#service-handler#beginFileUpload")
-  public String beginFileUpload() throws TException {
+  public String beginFileUpload() {
     String fileLoc = null;
     try {
       fileLoc =
@@ -326,10 +326,8 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
       LOG.info("Uploading file from client to " + fileLoc);
     } catch (FileNotFoundException e) {
       LOG.error(" file not found " + fileLoc);
-      throw new TException(e);
     } catch (IOException e) {
-      LOG.error(" IOException  " + fileLoc, e);
-      throw new TException(e);
+      LOG.error(CoreUtil.stringifyError(e));
     }
     return fileLoc;
   }
@@ -337,11 +335,11 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
   @SuppressWarnings({ "unchecked", "deprecation" })
   @Override
   @ClojureClass(className = "backtype.storm.daemon.nimbus#service-handler#uploadChunk")
-  public void uploadChunk(String location, ByteBuffer chunk) throws TException {
+  public void uploadChunk(String location, ByteBuffer chunk) {
     FileCacheMap<Object, Object> uploaders = nimbus.getUploaders();
     Object obj = uploaders.get(location);
     if (obj == null) {
-      throw new TException(
+      throw new RuntimeException(
           "File for that location does not exist (or timed out) " + location);
     }
     try {
@@ -350,13 +348,14 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
         channel.write(chunk);
         uploaders.put(location, channel);
       } else {
-        throw new TException("Object isn't WritableByteChannel for " + location);
+        throw new RuntimeException("Object isn't WritableByteChannel for "
+            + location);
       }
     } catch (IOException e) {
       String errMsg =
           " WritableByteChannel write filed when uploadChunk " + location;
       LOG.error(errMsg);
-      throw new TException(e);
+      throw new RuntimeException(e);
     }
   }
 
@@ -432,7 +431,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 
   @Override
   @ClojureClass(className = "backtype.storm.daemon.nimbus#service-handler#getClusterInfo")
-  public ClusterSummary getClusterInfo() throws TException {
+  public ClusterSummary getClusterInfo() {
     try {
       // NimbusUtils.checkAuthorization(nimbus, null, null, "getClusterInfo");
       StormClusterState stormClusterState = nimbus.getStormClusterState();
@@ -451,7 +450,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
           topologySummaries);
     } catch (Exception e) {
       LOG.error("Failed to get ClusterSummary ", e);
-      throw new TException(e);
+      throw new RuntimeException(e);
     }
   }
 
@@ -537,7 +536,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
   @Override
   @ClojureClass(className = "backtype.storm.daemon.nimbus#service-handler#getTopologyInfo")
   public TopologyInfo getTopologyInfo(String stormId) throws NotAliveException,
-      TException {
+      AuthorizationException {
     GetInfoOptions options = new GetInfoOptions();
     options.set_num_err_choice(NumErrorsChoice.ALL);
     return this.getTopologyInfoWithOpts(stormId, options);

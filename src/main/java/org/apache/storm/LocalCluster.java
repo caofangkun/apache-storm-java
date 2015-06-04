@@ -47,8 +47,10 @@ import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
 import backtype.storm.ILocalCluster;
+import backtype.storm.generated.AuthorizationException;
 import backtype.storm.generated.ClusterSummary;
 import backtype.storm.generated.Credentials;
+import backtype.storm.generated.InvalidTopologyException;
 import backtype.storm.generated.KillOptions;
 import backtype.storm.generated.NotAliveException;
 import backtype.storm.generated.RebalanceOptions;
@@ -288,8 +290,6 @@ public class LocalCluster implements ILocalCluster {
       ret = this.serviceHandler.getTopologyConf(id);
     } catch (NotAliveException e) {
       e.printStackTrace();
-    } catch (TException e) {
-      e.printStackTrace();
     }
     return ret;
   }
@@ -301,7 +301,8 @@ public class LocalCluster implements ILocalCluster {
       ret = this.serviceHandler.getTopology(id);
     } catch (NotAliveException e) {
       e.printStackTrace();
-    } catch (TException e) {
+    } catch (InvalidTopologyException e) {
+      // TODO Auto-generated catch block
       e.printStackTrace();
     }
     return ret;
@@ -309,13 +310,7 @@ public class LocalCluster implements ILocalCluster {
 
   @Override
   public ClusterSummary getClusterInfo() {
-    ClusterSummary ret = null;
-    try {
-      ret = this.serviceHandler.getClusterInfo();
-    } catch (TException e) {
-      e.printStackTrace();
-    }
-    return ret;
+    return  this.serviceHandler.getClusterInfo();
   }
 
   @Override
@@ -325,7 +320,8 @@ public class LocalCluster implements ILocalCluster {
       ret = this.serviceHandler.getTopologyInfo(id);
     } catch (NotAliveException e) {
       e.printStackTrace();
-    } catch (TException e) {
+    } catch (AuthorizationException e) {
+      // TODO Auto-generated catch block
       e.printStackTrace();
     }
     return ret;
