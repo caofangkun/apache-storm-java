@@ -229,7 +229,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
   @Override
   @ClojureClass(className = "backtype.storm.daemon.nimbus#service-handler#rebalance")
   public void rebalance(String stormName, RebalanceOptions options)
-      throws NotAliveException, TException, InvalidTopologyException {
+      throws NotAliveException,  InvalidTopologyException {
     try {
       NimbusUtils.checkStormActive(nimbus, stormName, true);
       Integer waitAmt = null;
@@ -259,7 +259,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
     } catch (Throwable e) {
       String errMsg = "Failed to rebalance topology " + stormName;
       LOG.error(errMsg, e);
-      throw new TException(errMsg);
+      throw new NotAliveException();
     }
   }
 
@@ -546,19 +546,18 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
   @SuppressWarnings("rawtypes")
   @Override
   @ClojureClass(className = "backtype.storm.daemon.nimbus#service-handler#getTopologyConf")
-  public String getTopologyConf(String id) throws NotAliveException, TException {
+  public String getTopologyConf(String id) throws NotAliveException {
     Map topologyConf = NimbusUtils.tryReadStormConf(conf, id);
     return CoreUtil.to_json(topologyConf);
   }
 
-  public String getSupervisorConf(String id) throws NotAliveException,
-      TException {
+  public String getSupervisorConf(String id) throws NotAliveException {
     StormClusterState stormClusterState = nimbus.getStormClusterState();
     SupervisorInfo supervisorInfo = null;
     try {
       supervisorInfo = stormClusterState.supervisorInfo(id);
     } catch (Exception e) {
-      throw new TException(e);
+      throw new NotAliveException();
     }
     return CoreUtil.to_json(supervisorInfo.getSupervisorConf());
   }
@@ -567,7 +566,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
   @Override
   @ClojureClass(className = "backtype.storm.daemon.nimbus#service-handler#getTopology")
   public StormTopology getTopology(String id) throws NotAliveException,
-      TException {
+      InvalidTopologyException {
     Map topologyConf = NimbusUtils.tryReadStormConf(conf, id);
     // String stormName =
     // CoreUtil.parseString(topologyConf.get(Config.TOPOLOGY_NAME),
@@ -600,15 +599,14 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 
   @Override
   @ClojureClass(className = "backtype.storm.daemon.nimbus#service-handler#getNimbusConf")
-  public String getNimbusConf() throws TException {
+  public String getNimbusConf() {
     return CoreUtil.to_json(conf);
   }
 
   @SuppressWarnings("rawtypes")
   @Override
   @ClojureClass(className = "backtype.storm.daemon.nimbus#service-handler#getUserTopology")
-  public StormTopology getUserTopology(String id) throws NotAliveException,
-      TException {
+  public StormTopology getUserTopology(String id) throws NotAliveException {
     Map topologyConf = NimbusUtils.tryReadStormConf(conf, id);
     // String stormName =
     // CoreUtil.parseString(topologyConf.get(Config.TOPOLOGY_NAME),
@@ -690,8 +688,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
   @Override
   @ClojureClass(className = "backtype.storm.daemon.nimbus#service-handler#getTopologyInfoWithOpts")
   public TopologyInfo getTopologyInfoWithOpts(String stormId,
-      GetInfoOptions options) throws NotAliveException, AuthorizationException,
-      TException {
+      GetInfoOptions options) throws NotAliveException, AuthorizationException {
     StormClusterState stormClusterState = nimbus.getStormClusterState();
     Map topologyConf = NimbusUtils.tryReadStormConf(conf, stormId);
     String stormName = (String) topologyConf.get(Config.TOPOLOGY_NAME);
@@ -760,7 +757,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
       }
       return topoInfo;
     } catch (Exception e) {
-      throw new TException(e);
+      throw new NotAliveException();
     }
   }
 }

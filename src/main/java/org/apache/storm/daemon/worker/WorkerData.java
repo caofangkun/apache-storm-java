@@ -52,7 +52,6 @@ import backtype.storm.generated.TopologyStatus;
 import backtype.storm.messaging.IConnection;
 import backtype.storm.messaging.IContext;
 import backtype.storm.messaging.TransportFactory;
-import backtype.storm.scheduler.WorkerSlot;
 import backtype.storm.task.WorkerTopologyContext;
 import backtype.storm.tuple.Fields;
 import backtype.storm.utils.DisruptorQueue;

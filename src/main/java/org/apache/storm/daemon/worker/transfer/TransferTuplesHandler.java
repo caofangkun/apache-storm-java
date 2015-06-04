@@ -19,7 +19,6 @@ package org.apache.storm.daemon.worker.transfer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -32,7 +31,6 @@ import org.slf4j.LoggerFactory;
 
 import backtype.storm.messaging.IConnection;
 import backtype.storm.messaging.TaskMessage;
-import backtype.storm.scheduler.WorkerSlot;
 import backtype.storm.utils.DisruptorQueue;
 import backtype.storm.utils.TransferDrainer;
 
