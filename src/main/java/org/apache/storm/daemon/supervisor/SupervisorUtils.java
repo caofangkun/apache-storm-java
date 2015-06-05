@@ -315,7 +315,7 @@ public class SupervisorUtils {
   @ClojureClass(className = "backtype.storm.daemon.supervisor#download-storm-code#distribute")
   public static void downloadDistributeStormCode(Map conf, String stormId,
       String masterCodeDir, Object downloadLock) throws IOException,
-       TException {
+       TException, AuthorizationException {
     // STORM_LOCAL_DIR/supervisor/tmp/(UUID)
     synchronized (downloadLock) {
       String tmproot =
