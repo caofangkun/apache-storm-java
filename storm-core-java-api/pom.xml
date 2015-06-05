@@ -467,7 +467,7 @@
 					<relocations>
 						<relocation>
 							<pattern>org.apache.thrift</pattern>
-							<shadedPattern>org.apache.thrift7</shadedPattern>
+							<shadedPattern>org.apache.storm.thrift</shadedPattern>
 						</relocation>
 						<relocation>
 							<pattern>org.jboss.netty</pattern>
