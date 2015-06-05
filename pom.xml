@@ -85,7 +85,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<storm.version>0.11-SNAPSHOT</storm.version>
+		<storm.version>0.11.0-SNAPSHOT</storm.version>
 		<curator.version>2.5.0</curator.version>
 		<args4j.version>2.0.16</args4j.version>
 	</properties>

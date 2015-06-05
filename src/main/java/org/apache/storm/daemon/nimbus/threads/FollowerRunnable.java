@@ -30,13 +30,11 @@ import org.apache.storm.daemon.common.Assignment;
 import org.apache.storm.daemon.nimbus.NimbusData;
 import org.apache.storm.daemon.nimbus.NimbusServer;
 import org.apache.storm.daemon.nimbus.NimbusUtils;
+import org.apache.storm.thrift.TException;
 import org.apache.storm.util.CoreUtil;
 import org.apache.storm.util.thread.RunnableCallback;
-import org.apache.thrift7.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import backtype.storm.generated.AuthorizationException;
 
 public class FollowerRunnable implements Runnable {
 
@@ -121,10 +119,13 @@ public class FollowerRunnable implements Runnable {
       LOG.error("Get stormdist dir error!");
       e.printStackTrace();
       return;
-    } catch (Exception e) {
+    } catch (TException e) {
       LOG.error("Check error!");
       e.printStackTrace();
       return;
+    } catch (Exception e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
     }
   }
 
@@ -141,7 +142,7 @@ public class FollowerRunnable implements Runnable {
   }
 
   private void downloadCodeFromMaster(Assignment assignment, String topologyId)
-      throws IOException, TException, AuthorizationException {
+      throws IOException, TException {
     try {
       String localRoot =
           ConfigUtil.masterStormdistRoot(data.getConf(), topologyId);

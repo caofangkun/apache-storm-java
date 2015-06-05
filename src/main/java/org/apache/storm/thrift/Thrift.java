@@ -29,11 +29,11 @@ import java.util.Set;
 
 import org.apache.storm.ClojureClass;
 import org.apache.storm.daemon.worker.executor.grouping.GroupingType;
+import org.apache.storm.thrift.protocol.TBinaryProtocol;
+import org.apache.storm.thrift.transport.TFramedTransport;
+import org.apache.storm.thrift.transport.TSocket;
+import org.apache.storm.thrift.transport.TTransportException;
 import org.apache.storm.util.CoreUtil;
-import org.apache.thrift7.protocol.TBinaryProtocol;
-import org.apache.thrift7.transport.TFramedTransport;
-import org.apache.thrift7.transport.TSocket;
-import org.apache.thrift7.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

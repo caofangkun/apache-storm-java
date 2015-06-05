@@ -41,9 +41,9 @@ import org.apache.storm.daemon.worker.Worker;
 import org.apache.storm.daemon.worker.WorkerShutdown;
 import org.apache.storm.daemon.worker.WorkerStatus;
 import org.apache.storm.daemon.worker.heartbeat.WorkerLocalHeartbeat;
+import org.apache.storm.thrift.TException;
 import org.apache.storm.util.CoreUtil;
 import org.apache.storm.util.thread.RunnableCallback;
-import org.apache.thrift7.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -302,7 +302,8 @@ public class SupervisorUtils {
   @SuppressWarnings("rawtypes")
   @ClojureClass(className = "backtype.storm.daemon.supervisor#download-storm-code")
   public static void downloadStormCode(Map conf, String stormId,
-      String masterCodeDir, Object downloadLock) throws IOException, TException {
+      String masterCodeDir, Object downloadLock) throws IOException,
+      TException, AuthorizationException {
     boolean isDistributeMode = ConfigUtil.isDistributedMode(conf);
     if (isDistributeMode) {
       downloadDistributeStormCode(conf, stormId, masterCodeDir, downloadLock);
@@ -315,7 +316,7 @@ public class SupervisorUtils {
   @ClojureClass(className = "backtype.storm.daemon.supervisor#download-storm-code#distribute")
   public static void downloadDistributeStormCode(Map conf, String stormId,
       String masterCodeDir, Object downloadLock) throws IOException,
-       TException, AuthorizationException {
+      TException, AuthorizationException {
     // STORM_LOCAL_DIR/supervisor/tmp/(UUID)
     synchronized (downloadLock) {
       String tmproot =
