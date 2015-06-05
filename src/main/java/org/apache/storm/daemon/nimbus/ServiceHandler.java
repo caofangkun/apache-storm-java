@@ -50,7 +50,6 @@ import org.apache.storm.daemon.worker.stats.Stats;
 import org.apache.storm.daemon.worker.stats.StatsData;
 import org.apache.storm.util.CoreUtil;
 import org.apache.storm.util.NetWorkUtils;
-import org.apache.thrift7.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -362,11 +361,11 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
   @SuppressWarnings({ "unchecked", "deprecation" })
   @Override
   @ClojureClass(className = "backtype.storm.daemon.nimbus#service-handler#finishFileUpload")
-  public void finishFileUpload(String location) throws TException {
+  public void finishFileUpload(String location)  {
     FileCacheMap<Object, Object> uploaders = nimbus.getUploaders();
     Object obj = uploaders.get(location);
     if (obj == null) {
-      throw new TException(
+      throw new RuntimeException(
           "File for that location does not exist (or timed out)");
     }
     try {
@@ -376,7 +375,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
         uploaders.remove(location);
         LOG.info("Finished uploading file from client: " + location);
       } else {
-        throw new TException("Object isn't WritableByteChannel for " + location);
+        throw new RuntimeException("Object isn't WritableByteChannel for " + location);
       }
     } catch (IOException e) {
       LOG.error(" WritableByteChannel close failed when finishFileUpload "
@@ -387,7 +386,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
   @SuppressWarnings({ "unchecked", "deprecation" })
   @Override
   @ClojureClass(className = "backtype.storm.daemon.nimbus#service-handler#beginFileDownload")
-  public String beginFileDownload(String file) throws TException {
+  public String beginFileDownload(String file)  {
     // NimbusUtils.checkAuthorization(nimbus, null, null, "fileDownload");
     // NimbusUtils.checkFileAccess(nimbus.getConf(), file);
     BufferFileInputStream is = null;
@@ -398,7 +397,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
       nimbus.getDownloaders().put(id, is);
     } catch (FileNotFoundException e) {
       LOG.error(e + "file:" + file + " not found");
-      throw new TException(e);
+      throw new RuntimeException(e);
     }
     return id;
   }
@@ -406,11 +405,11 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
   @SuppressWarnings({ "unchecked", "deprecation" })
   @Override
   @ClojureClass(className = "backtype.storm.daemon.nimbus#service-handler#downloadChunk")
-  public ByteBuffer downloadChunk(String id) throws TException {
+  public ByteBuffer downloadChunk(String id)  {
     FileCacheMap<Object, Object> downloaders = nimbus.getDownloaders();
     Object obj = downloaders.get(id);
     if (obj == null || !(obj instanceof BufferFileInputStream)) {
-      throw new TException("Could not find input stream for that id");
+      throw new RuntimeException("Could not find input stream for that id");
     }
     BufferFileInputStream is = (BufferFileInputStream) obj;
     byte[] ret = null;
@@ -424,7 +423,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
       }
     } catch (IOException e) {
       LOG.error(e + "BufferFileInputStream read failed when downloadChunk ");
-      throw new TException(e);
+      throw new RuntimeException(e);
     }
     return ByteBuffer.wrap(ret);
   }

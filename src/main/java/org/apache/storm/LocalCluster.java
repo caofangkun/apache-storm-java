@@ -41,7 +41,6 @@ import org.apache.storm.daemon.worker.messaging.local.LocalContext;
 import org.apache.storm.testing.Testing;
 import org.apache.storm.util.CoreUtil;
 import org.apache.storm.zk.InprocessZookeeper;
-import org.apache.thrift7.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -204,7 +203,7 @@ public class LocalCluster implements ILocalCluster {
   public void activate(String topologyName) throws NotAliveException {
     try {
       serviceHandler.activate(topologyName);
-    } catch (TException e) {
+    } catch (RuntimeException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
     }
@@ -214,7 +213,7 @@ public class LocalCluster implements ILocalCluster {
   public void deactivate(String topologyName) throws NotAliveException {
     try {
       serviceHandler.deactivate(topologyName);
-    } catch (TException e) {
+    } catch (RuntimeException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
     }
@@ -225,7 +224,10 @@ public class LocalCluster implements ILocalCluster {
       throws NotAliveException {
     try {
       serviceHandler.rebalance(name, options);
-    } catch (TException e) {
+    } catch (RuntimeException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    } catch (InvalidTopologyException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
     }
@@ -310,7 +312,7 @@ public class LocalCluster implements ILocalCluster {
 
   @Override
   public ClusterSummary getClusterInfo() {
-    return  this.serviceHandler.getClusterInfo();
+    return this.serviceHandler.getClusterInfo();
   }
 
   @Override
