@@ -80,7 +80,7 @@
           <relocations>
             <relocation>
               <pattern>org.apache.thrift</pattern>
-              <shadedPattern>org.apache.thrift7</shadedPattern>
+              <shadedPattern>org.apache.storm.thrift</shadedPattern>
             </relocation>
             <relocation>
               <pattern>org.jboss.netty</pattern>
@@ -149,6 +149,20 @@
       <snapshots />
       <id>oss-snapshots</id>
       <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+    </repository>
+    <repository>
+      <releases />
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <id>central</id>
+      <url>http://repo1.maven.org/maven2/</url>
+    </repository>
+    <repository>
+      <releases />
+      <snapshots />
+      <id>clojars</id>
+      <url>https://clojars.org/repo/</url>
     </repository>
   </repositories>
   <pluginRepositories>
