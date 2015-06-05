@@ -6,8 +6,8 @@
 	<artifactId>storm-core-java-api</artifactId>
 	<version>0.11.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
-	<name>storm-core-java-api</name>
-	<url>https://github.com/caofangkun/storm-core-java</url>
+	<piiname>storm-core-java-api</name>
+	<url>https://github.com/caofangkun/storm-core-java-api</url>
 
 	<licenses>
 		<license>

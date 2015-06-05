@@ -4,8 +4,8 @@
   <groupId>com.github.caofangkun</groupId>
   <artifactId>storm-core-java-api</artifactId>
   <name>storm-core-java-api</name>
-  <version>0.11-SNAPSHOT</version>
-  <url>https://github.com/caofangkun/storm-core-java</url>
+  <version>0.11.0-SNAPSHOT</version>
+  <url>https://github.com/caofangkun/storm-core-java-api</url>
   <developers>
     <developer>
       <id>caofangkun</id>
