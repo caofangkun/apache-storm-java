@@ -42,6 +42,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -478,7 +479,7 @@ public class CoreUtil {
   }
 
   // @@@ supervisor don't use this function
-  @SuppressWarnings({ "unchecked", "rawtypes" })
+  @SuppressWarnings({"rawtypes" })
   public static void downloadCodeFromMaster(Map conf, String localRoot,
       String masterCodeDir)
       throws backtype.storm.generated.AuthorizationException, IOException,
@@ -1231,18 +1232,26 @@ public class CoreUtil {
     return logsRootname(stormId, port) + ".yaml";
   }
 
+  /**
+   * Example: wordcount-1-123456789-worker-6701.log <BR/>
+   * group(2) = wordcount-1-123456789 <BR/>
+   * group(3) = 6701
+   */
   @ClojureClass(className = "backtype.storm.util#worker-log-filename-pattern")
-  // TODO
-  public static Pattern workerLogFilenamePattern = Pattern.compile("");
+  public static Pattern workerLogFilenamePattern = Pattern
+      .compile("((.*-\\d+-\\d+)-worker-(\\d+)).log");
 
   @ClojureClass(className = "backtype.storm.util#get-log-metadata-file")
-  public static String getLogMetadataFile(String fname) {
-    // TODO
-    return fname;
+  public static String getLogMetadataFile(String fname) throws IOException {
+    Matcher match = workerLogFilenamePattern.matcher(fname);
+    String stormId = match.group(2);
+    Integer port = Integer.valueOf(match.group(3));
+    return getLogMetadataFile(stormId, port);
   }
 
   @ClojureClass(className = "backtype.storm.util#get-log-metadata-file")
-  public String getLogMetadataFile(String id, Integer port) throws IOException {
+  public static String getLogMetadataFile(String id, Integer port)
+      throws IOException {
     String LOG_DIR =
         new File(System.getProperty("storm.home") + "logs").getCanonicalPath();
     return LOG_DIR + "metadata" + logsMetadataFilename(id, port);

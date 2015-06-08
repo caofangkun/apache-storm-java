@@ -556,14 +556,16 @@ public class SupervisorUtils {
   @SuppressWarnings("rawtypes")
   @ClojureClass(className = "backtype.storm.daemon.supervisor#write-log-metadata-to-yaml-file!")
   private static void writeLogMetadataToYamlFile(String stormId, Integer port,
-      Map<String, String> data, Map conf) {
+      Map<String, String> data, Map conf) throws IOException {
     // TODO
+    CoreUtil.getLogMetadataFile(stormId, port);
 
   }
 
   @ClojureClass(className = "backtype.storm.daemon.supervisor#write-log-metadata!")
   private static void writeLogMetadata(Map stormConf, String user,
-      String workerId, String stormId, Integer port, Map conf) {
+      String workerId, String stormId, Integer port, Map conf)
+      throws IOException {
     List<String> logsGroups = (List<String>) stormConf.get(Config.LOGS_GROUPS);
     List<String> topologyGroups =
         (List<String>) stormConf.get(Config.TOPOLOGY_GROUPS);
