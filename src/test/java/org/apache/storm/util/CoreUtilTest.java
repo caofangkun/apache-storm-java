@@ -117,6 +117,7 @@ public class CoreUtilTest {
 
   @Test
   public void testParseInt() {
+    conf.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 30);
     int defaultValue = (Integer) conf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS);
     Assert.assertEquals(30, defaultValue);
     int secs = CoreUtil.parseInt(defaultValue, 40);
@@ -129,6 +130,7 @@ public class CoreUtilTest {
 
   @Test
   public void testParseBoolean() {
+    conf.put(Config.TOPOLOGY_DEBUG, false);
     boolean defaultValue = (Boolean) conf.get(Config.TOPOLOGY_DEBUG);
     Assert.assertFalse(defaultValue);
     boolean flag = CoreUtil.parseBoolean(defaultValue, true);

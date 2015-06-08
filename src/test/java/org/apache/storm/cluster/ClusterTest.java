@@ -547,7 +547,7 @@ public class ClusterTest {
     Assert.assertNull(Cluster.maybeDeserialize(tmp, String.class));
     String test = "11111111111111111";
     byte[] bytes = Utils.serialize(test);
-    String str = (String) Cluster.maybeDeserialize(bytes, String.class);
+    String str =  Cluster.maybeDeserialize(bytes, String.class);
     Assert.assertEquals(test, str);
   }
 
