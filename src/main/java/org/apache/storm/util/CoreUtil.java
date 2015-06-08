@@ -479,7 +479,7 @@ public class CoreUtil {
   }
 
   // @@@ supervisor don't use this function
-  @SuppressWarnings({"rawtypes" })
+  @SuppressWarnings({ "rawtypes" })
   public static void downloadCodeFromMaster(Map conf, String localRoot,
       String masterCodeDir)
       throws backtype.storm.generated.AuthorizationException, IOException,
@@ -1257,4 +1257,24 @@ public class CoreUtil {
     return LOG_DIR + "metadata" + logsMetadataFilename(id, port);
   }
 
+  /**
+   * Set a default uncaught exception handler to handle exceptions not caught in
+   * other threads.
+   */
+  @ClojureClass(className = "backtype.storm.util#setup-default-uncaught-exception-handler")
+  public static void setupDefaultUncaughtExceptionHandler() {
+    Thread
+        .setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+
+          @Override
+          public void uncaughtException(Thread thread, Throwable thrown) {
+            try {
+              Utils.handleUncaughtException(thrown);
+            } catch (Error err) {
+              LOG.error("Received error in main thread.. terminating server...");
+              Runtime.getRuntime().exit(-2);
+            }
+          }
+        });
+  }
 }
