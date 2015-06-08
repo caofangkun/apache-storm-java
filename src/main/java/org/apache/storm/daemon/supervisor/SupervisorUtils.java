@@ -496,56 +496,54 @@ public class SupervisorUtils {
 
     String stormConfDir = System.getProperty("storm.conf.dir");
 
-    StringBuilder commandSB = new StringBuilder();
-    commandSB.append(javaCmd());
-    commandSB.append(" -server ");
-    commandSB.append(workerChildopts);
-    commandSB.append(workerGcChildopts);
-    commandSB.append(topoWorkerChildopts);
-    commandSB.append(" -Djava.library.path=");
-    commandSB.append(jlp);
-    commandSB.append(" -Dlogfile.name=");
-    commandSB.append(logfilename);
-    commandSB.append(" -Dstorm.home=");
-    commandSB.append(stormhome);
-    commandSB.append(" -Dstorm.options=");
-    commandSB.append(stormOptions);
-    commandSB.append(" -Dstorm.log.file=");
-    commandSB.append(logfilename);
-    commandSB.append(" -Dstorm.log.dir=");
-    commandSB.append(stormLogDir);
+    StringBuilder command = new StringBuilder();
+    command.append(javaCmd());
+    command.append(" -server ");
+    command.append(workerChildopts);
+    command.append(workerGcChildopts);
+    command.append(topoWorkerChildopts);
+    command.append(" -Djava.library.path=");
+    command.append(jlp);
+    command.append(" -Dlogfile.name=");
+    command.append(logfilename);
+    command.append(" -Dstorm.home=");
+    command.append(stormhome);
+    command.append(" -Dstorm.options=");
+    command.append(stormOptions);
+    command.append(" -Dstorm.log.file=");
+    command.append(logfilename);
+    command.append(" -Dstorm.log.dir=");
+    command.append(stormLogDir);
     if (stormConfDir != null) {
-      commandSB.append(" -Dlog4j.configuration=File:" + stormConfDir
+      command.append(" -Dlog4j.configuration=File:" + stormConfDir
           + "/storm.log4j.properties ");
-      commandSB.append(" -Dstorm.conf.dir=");
-      commandSB.append(stormConfDir);
+      command.append(" -Dstorm.conf.dir=");
+      command.append(stormConfDir);
     } else {
-      commandSB.append(" -Dlog4j.configuration=File:storm.log4j.properties");
+      command.append(" -Dlog4j.configuration=File:storm.log4j.properties");
     }
-    commandSB.append(" -Dstorm.id=");
-    commandSB.append(stormId);
-    commandSB.append(" -Dstorm.local.hostname=");
-    commandSB.append(stormLocalHostname);
-    commandSB.append(" -Dworker.id=");
-    commandSB.append(workerId);
-    commandSB.append(" -Dworker.port=");
-    commandSB.append(port);
-    commandSB.append(" -cp ");
-    commandSB.append(classPath);
-    commandSB.append(" com.tencent.jstorm.daemon.worker.Worker ");
-    commandSB.append(stormId);
-    commandSB.append(" ");
-    commandSB.append(supervisor.getAssignmentId());
-    commandSB.append(" ");
-    commandSB.append(port);
-    commandSB.append(" ");
-    commandSB.append(workerId);
-    LOG.info("Launching worker with command: " + commandSB);
+    command.append(" -Dstorm.id=");
+    command.append(stormId);
+    command.append(" -Dstorm.local.hostname=");
+    command.append(stormLocalHostname);
+    command.append(" -Dworker.id=");
+    command.append(workerId);
+    command.append(" -Dworker.port=");
+    command.append(port);
+    command.append(" -cp ");
+    command.append(classPath);
+    command.append(" com.tencent.jstorm.daemon.worker.Worker ");
+    command.append(stormId);
+    command.append(" ");
+    command.append(supervisor.getAssignmentId());
+    command.append(" ");
+    command.append(port);
+    command.append(" ");
+    command.append(workerId);
+    LOG.info("Launching worker with command: " + command);
     Process p = null;
     try {
-      p =
-          CoreUtil.launchProcess(commandSB.toString(),
-              topologyWorkerEnvironment);
+      p = CoreUtil.launchProcess(command.toString(), topologyWorkerEnvironment);
     } finally {
       if (p != null) {
         IOUtils.closeQuietly(p.getOutputStream());
@@ -614,6 +612,10 @@ public class SupervisorUtils {
         .replaceAll("%WORKER-PORT%", port.toString());
   }
 
+  /**
+   * 
+   * @return java home path
+   */
   @ClojureClass(className = "backtype.storm.daemon.supervisor#java-cmd")
   private static String javaCmd() {
     String javaHome = System.getenv("JAVA_HOME");

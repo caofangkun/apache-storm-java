@@ -451,7 +451,6 @@ public class StormZkClusterState implements StormClusterState {
     clusterState.setData(path, Utils.serialize(creds), topoAcls);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   @ClojureClass(className = "backtype.storm.cluster#mk-storm-cluster-state#credentials")
   public Credentials credentials(String stormId, RunnableCallback callback)

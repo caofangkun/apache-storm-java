@@ -37,6 +37,7 @@ public class config_value {
     System.out.println("    $STORM_HOME/bin/storm config_value keyName");
   }
 
+  @SuppressWarnings("rawtypes")
   public static void main(String[] args) {
     if (args == null || args.length == 0) {
       printUsage();

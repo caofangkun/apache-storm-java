@@ -424,6 +424,8 @@ public class ConfigUtil {
     LOG.info("SET worker-user " + workerId + " " + user);
     File file = new File(workerUserFile(conf, workerId));
     file.getParentFile().mkdirs();
+    
+    //http://clojuredocs.org/clojure.core/spit
     FileUtils.writeStringToFile(file, user);
   }
 

@@ -465,24 +465,26 @@ public class Common {
   }
 
   /**
-   * Generates a list of component ids for each metrics consumer e.g.
-   * [\"__metrics_org.mycompany.MyMetricsConsumer\", ..]
-   * 
+   *
    * @param stormConf
-   * @return
+   * @return Generates a list of component ids for each metrics consumer e.g.
+   *         [\"__metrics_org.mycompany.MyMetricsConsumer\", ..]
    */
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   @ClojureClass(className = "backtype.storm.daemon.common#metrics-consumer-register-ids")
   public static List<String> metricsConsumerRegisterIds(Map stormConf) {
-    Map<String, String> metircsRegisters =
+    Map<String, String> metricsRegisters =
         (Map<String, String>) stormConf
             .get(Config.TOPOLOGY_METRICS_CONSUMER_REGISTER);
-    // TODO
-
-    return null;
+    List<String> ids = new ArrayList<String>();
+    String prefix = Constants.METRICS_COMPONENT_ID_PREFIX;
+    for (String clazz : metricsRegisters.keySet()) {
+      ids.add(prefix + clazz);
+    }
+    return ids;
   }
 
-  @SuppressWarnings({ "unused", "rawtypes" })
+  @SuppressWarnings({ "unused", "rawtypes", "unchecked" })
   @ClojureClass(className = "backtype.storm.daemon.common#metrics-consumer-bolt-specs ")
   private static Map<String, IBolt> metricsConsumerBoltSpecs(Map stormConf,
       StormTopology topology) {
@@ -547,9 +549,9 @@ public class Common {
   @SuppressWarnings("rawtypes")
   @ClojureClass(className = "backtype.storm.daemon.common#has-ackers?")
   public static boolean hasAcker(Map stormConf) {
-    Integer tae =
+    Integer topologyAckerExecutors =
         CoreUtil.parseInt(stormConf.get(Config.TOPOLOGY_ACKER_EXECUTORS));
-    return (tae == null) || (tae > 0);
+    return (topologyAckerExecutors == null) || (topologyAckerExecutors > 0);
   }
 
   /**
