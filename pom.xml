@@ -89,6 +89,7 @@
 		<curator.version>2.5.0</curator.version>
 		<args4j.version>2.0.16</args4j.version>
                 <junit.version>4.10</junit.version>
+                <commons-collections.version>3.2.1</commons-collections.version>
 	</properties>
 
 	<dependencies>
@@ -182,7 +183,11 @@
                         <version>${junit.version}</version>
                         <scope>test</scope>
                 </dependency>
-
+                <dependency>
+                        <groupId>commons-collections</groupId>
+                        <artifactId>commons-collections</artifactId>
+                        <version>${commons-collections.version}</version>
+                </dependency>
 	</dependencies>
 	<build>
 		<resources>
