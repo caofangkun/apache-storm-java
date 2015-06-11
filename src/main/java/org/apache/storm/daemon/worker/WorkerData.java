@@ -118,7 +118,7 @@ public class WorkerData implements Serializable {
     this.receiver = this.mqContext.bind(stormId, port);
     this.stormId = stormId;
     this.assignmentId = assignmentId;
-    this.hostName = System.getProperty("storm.local.hostname");
+    this.hostName = CoreUtil.hostname(stormConf);
     this.port = port;
     this.workerId = workerId;
     this.processId = processId;

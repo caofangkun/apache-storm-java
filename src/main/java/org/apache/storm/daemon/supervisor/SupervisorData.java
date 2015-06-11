@@ -78,9 +78,7 @@ public class SupervisorData implements Serializable {
     this.supervisorId = isupervisor.getSupervisorId();
     this.assignmentId = isupervisor.getAssignmentId();
     this.sharedContext = sharedContext;
-    this.myHostname =
-        CoreUtil.parseString(conf.get(Config.STORM_LOCAL_HOSTNAME),
-            CoreUtil.localHostname());
+    this.myHostname = CoreUtil.hostname(conf);
     conf.put(Config.STORM_LOCAL_HOSTNAME, myHostname);
     // used for reporting used ports when heartbeating
     this.currAssignment = new HashMap<Integer, LocalAssignment>();

@@ -172,15 +172,10 @@ public class ExecutorUtils {
         intervalToTaskToMetricRegistry.get(interval).get(taskId);
     long now = System.currentTimeMillis() / 1000;
     TaskInfo taskInfo = null;
-    try {
-      taskInfo =
-          new IMetricsConsumer.TaskInfo(CoreUtil.localHostname(),
-              workerContext.getThisWorkerPort(), executorData.getComponentId(),
-              taskId, now, interval);
-    } catch (UnknownHostException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
+    taskInfo =
+        new IMetricsConsumer.TaskInfo(CoreUtil.hostname(executorData
+            .getStormConf()), workerContext.getThisWorkerPort(),
+            executorData.getComponentId(), taskId, now, interval);
 
     List<DataPoint> dataPoints = new ArrayList<DataPoint>();
     for (Map.Entry<String, IMetric> nameTometric : nameToImetrics.entrySet()) {
