@@ -62,6 +62,7 @@ import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import backtype.storm.Config;
 import backtype.storm.utils.MutableInt;
 import backtype.storm.utils.Time;
 import backtype.storm.utils.Utils;
@@ -702,8 +703,30 @@ public class CoreUtil {
   }
 
   @ClojureClass(className = "backtype.storm.util#local-hostname")
-  public static String localHostname() throws UnknownHostException {
-    return InetAddress.getLocalHost().getCanonicalHostName();
+  public static String localHostname() {
+    String localHostName = "127.0.0.1";
+    try {
+      localHostName = InetAddress.getLocalHost().getCanonicalHostName();
+    } catch (UnknownHostException e) {
+      LOG.warn(e.getMessage());
+    }
+    return localHostName;
+  }
+
+  /**
+   * checks conf for STORM_LOCAL_HOSTNAME. <BR/>
+   * when unconfigured, falls back to (memoized) guess by `local-hostname`.
+   * 
+   * @return
+   */
+  @SuppressWarnings("rawtypes")
+  @ClojureClass(className = "backtype.storm.util#hostname")
+  public static String hostname(Map conf) {
+    String hostName = (String) conf.get(Config.STORM_LOCAL_HOSTNAME);
+    if (hostName == null) {
+      return localHostname();
+    }
+    return hostName;
   }
 
   @ClojureClass(className = "backtype.storm.util#uuid")
