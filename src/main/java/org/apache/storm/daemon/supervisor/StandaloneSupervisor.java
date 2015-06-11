@@ -26,7 +26,6 @@ import java.util.Set;
 
 import org.apache.storm.ClojureClass;
 import org.apache.storm.daemon.common.Common;
-import org.apache.storm.util.NetWorkUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,28 +84,10 @@ public class StandaloneSupervisor implements ISupervisor {
   public Object getMetadata() {
     Map conf = (Map) confAtom.deref();
     Set<Integer> ports = new HashSet<Integer>();
-    try {
-      ports = (Set<Integer>) localState.get(Common.LS_SLOTS);
-      // TODO fix this bug
-      if (null == ports || ports.isEmpty()) {
-        ports = new HashSet<Integer>();
-        List<Integer> portList =
-            (List<Integer>) conf.get(Config.SUPERVISOR_SLOTS_PORTS);
-        for (Integer svPort : portList) {
-          if (svPort < 0) {
-            try {
-              svPort = NetWorkUtils.assignServerPort(svPort);
-            } catch (IOException e) {
-              LOG.error("Error while getting new port: ", e.getMessage());
-              throw new IOException(e);
-            }
-          }
-          ports.add(svPort);
-        }
-      }
-    } catch (IOException e1) {
-      LOG.error("Error while getting new port: ", e1.getMessage());
-      e1.printStackTrace();
+    List<Integer> portList =
+        (List<Integer>) conf.get(Config.SUPERVISOR_SLOTS_PORTS);
+    for (Integer svPort : portList) {
+      ports.add(svPort);
     }
     return ports;
   }
