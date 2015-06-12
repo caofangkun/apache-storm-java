@@ -150,7 +150,7 @@ public class Stats {
   }
 
   @ClojureClass(className = "backtype.storm.stats#stats-rate")
-  private static Integer statsRate(CommonStats stats) {
+  private static double statsRate(CommonStats stats) {
     return stats.getRate();
   }
 

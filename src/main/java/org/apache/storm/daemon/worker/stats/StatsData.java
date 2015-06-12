@@ -39,7 +39,7 @@ public class StatsData implements Serializable {
   protected Map<StatsFields, Map<Integer, Object>> commonFieldsMap;
   protected Map<StatsFields, Map<Integer, Object>> boltFieldsMap;
   protected Map<StatsFields, Map<Integer, Object>> spoutFieldsMap;
-  protected int rate = Stats.NUM_STAT_BUCKETS;
+  protected double rate = Stats.NUM_STAT_BUCKETS;
   private ExecutorType type;
 
   public StatsData(ExecutorType type) {
@@ -48,31 +48,25 @@ public class StatsData implements Serializable {
     boltFieldsMap = new HashMap<StatsFields, Map<Integer, Object>>();
     spoutFieldsMap = new HashMap<StatsFields, Map<Integer, Object>>();
 
-    // <window, Map<Stream, counter>>
-    HashMap<Integer, Object> emitted = new HashMap<Integer, Object>();
-    HashMap<Integer, Object> transferred = new HashMap<Integer, Object>();
-    HashMap<Integer, Object> acked = new HashMap<Integer, Object>();
-    HashMap<Integer, Object> failed = new HashMap<Integer, Object>();
-    HashMap<Integer, Object> process_latencies = new HashMap<Integer, Object>();
-    HashMap<Integer, Object> executed = new HashMap<Integer, Object>();
-    HashMap<Integer, Object> execute_latencies = new HashMap<Integer, Object>();
-    HashMap<Integer, Object> complete_ms_avg = new HashMap<Integer, Object>();
-
     // Common
-    commonFieldsMap.put(StatsFields.emitted, emitted);
-    commonFieldsMap.put(StatsFields.transferred, transferred);
+    commonFieldsMap.put(StatsFields.emitted, new HashMap<Integer, Object>());
+    commonFieldsMap
+        .put(StatsFields.transferred, new HashMap<Integer, Object>());
 
     // Bolt
-    boltFieldsMap.put(StatsFields.acked, acked);
-    boltFieldsMap.put(StatsFields.failed, failed);
-    boltFieldsMap.put(StatsFields.process_latencies, process_latencies);
-    boltFieldsMap.put(StatsFields.executed, executed);
-    boltFieldsMap.put(StatsFields.execute_latencies, execute_latencies);
+    boltFieldsMap.put(StatsFields.acked, new HashMap<Integer, Object>());
+    boltFieldsMap.put(StatsFields.failed, new HashMap<Integer, Object>());
+    boltFieldsMap.put(StatsFields.process_latencies,
+        new HashMap<Integer, Object>());
+    boltFieldsMap.put(StatsFields.executed, new HashMap<Integer, Object>());
+    boltFieldsMap.put(StatsFields.execute_latencies,
+        new HashMap<Integer, Object>());
 
     // Spout
-    spoutFieldsMap.put(StatsFields.acked, acked);
-    spoutFieldsMap.put(StatsFields.failed, failed);
-    spoutFieldsMap.put(StatsFields.complete_latencies, complete_ms_avg);
+    spoutFieldsMap.put(StatsFields.acked, new HashMap<Integer, Object>());
+    spoutFieldsMap.put(StatsFields.failed, new HashMap<Integer, Object>());
+    spoutFieldsMap.put(StatsFields.complete_latencies,
+        new HashMap<Integer, Object>());
 
   }
 
@@ -100,11 +94,11 @@ public class StatsData implements Serializable {
     return boltFieldsMap.get(type);
   }
 
-  public int getRate() {
+  public double getRate() {
     return rate;
   }
 
-  public void setRate(int rate) {
+  public void setRate(double rate) {
     this.rate = rate;
   }
 
@@ -150,19 +144,6 @@ public class StatsData implements Serializable {
 
     return true;
   }
-
-  // @Override
-  // public int hashCode() {
-  // int ret = 0;
-  // for (Entry<StaticsType, Map<Integer, Object>> entry :
-  // staticsMap.entrySet()) {
-  // StaticsType type = entry.getKey();
-  // Map<Integer, Object> value = entry.getValue();
-  //
-  // ret += value.hashCode();
-  // }
-  // return ret;
-  // }
 
   @Override
   public String toString() {

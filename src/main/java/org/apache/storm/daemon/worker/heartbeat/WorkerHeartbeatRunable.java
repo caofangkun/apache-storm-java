@@ -35,8 +35,11 @@ import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
 import backtype.storm.generated.ExecutorInfo;
-import backtype.storm.utils.MutableLong;
 
+/**
+ * 
+ * @see {@code}backtype.storm.generated.ClusterWorkerHeartbeat
+ */
 public class WorkerHeartbeatRunable extends RunnableCallback {
   private static final long serialVersionUID = 1L;
   private static final Logger LOG = LoggerFactory
@@ -48,11 +51,9 @@ public class WorkerHeartbeatRunable extends RunnableCallback {
   @SuppressWarnings("rawtypes")
   private Map stormConf;
   private int frequence;
-  private Exception exception = null;
   private String node;
   private int port;
   private WorkerData workerData;
-  private MutableLong retryCount;
 
   public WorkerHeartbeatRunable(WorkerData workerData) {
     this.workerData = workerData;
@@ -66,7 +67,6 @@ public class WorkerHeartbeatRunable extends RunnableCallback {
             3);
     this.uptime = workerData.getUptime();
     this.active = workerData.getStormActiveAtom();
-    this.retryCount = new MutableLong(0);
   }
 
   @ClojureClass(className = "backtype.storm.daemon.worker#do-executor-heartbeats")
@@ -87,13 +87,8 @@ public class WorkerHeartbeatRunable extends RunnableCallback {
     try {
       // do the zookeeper heartbeat
       stormClusterState.workerHeartbeat(stormId, node, port, zkHb);
-      retryCount = new MutableLong(0);
     } catch (Exception e) {
-      LOG.error("Failed to update heartbeat to ZK ", e);
-      retryCount.increment();
-      if (retryCount.get() >= 3) {
-        exception = new RuntimeException(e);
-      }
+      LOG.error("Failed to update heartbeat to ZK ", CoreUtil.stringifyError(e));
       return;
     }
     LOG.debug("WorkerHeartbeat:" + zkHb.toString());
@@ -106,11 +101,7 @@ public class WorkerHeartbeatRunable extends RunnableCallback {
 
   @Override
   public Exception error() {
-    if (null != exception) {
-      LOG.error("Worker Local Heartbeat exception: {}",
-          CoreUtil.stringifyError(exception));
-    }
-    return exception;
+    return null;
   }
 
   @Override
