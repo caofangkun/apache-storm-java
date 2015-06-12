@@ -18,12 +18,12 @@
 package org.apache.storm.daemon.supervisor.heartbeat;
 
 import java.io.IOException;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.storm.ClojureClass;
 import org.apache.storm.cluster.StormClusterState;
-import org.apache.storm.daemon.common.SupervisorInfo;
 import org.apache.storm.daemon.supervisor.SupervisorData;
 import org.apache.storm.util.CoreUtil;
 import org.apache.storm.util.thread.RunnableCallback;
@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
+import backtype.storm.generated.SupervisorInfo;
 import backtype.storm.scheduler.ISupervisor;
 import backtype.storm.utils.MutableLong;
 
@@ -60,8 +61,8 @@ public class SupervisorHeartbeat extends RunnableCallback {
     this.conf = conf;
     this.retryCount = new MutableLong(0);
     this.frequence =
-        CoreUtil.parseInt(
-            conf.get(Config.SUPERVISOR_HEARTBEAT_FREQUENCY_SECS), 10);
+        CoreUtil.parseInt(conf.get(Config.SUPERVISOR_HEARTBEAT_FREQUENCY_SECS),
+            10);
   }
 
   @SuppressWarnings("rawtypes")
@@ -73,14 +74,22 @@ public class SupervisorHeartbeat extends RunnableCallback {
     }
 
     try {
-      HashSet<Integer> workPorts = new HashSet<Integer>();
-      workPorts.addAll(supervisorData.getCurrAssignment().keySet());
+      List<Long> workPorts = new ArrayList<Long>();
+      for (Integer port : supervisorData.getCurrAssignment().keySet()) {
+        workPorts.add(Long.valueOf(port));
+      }
+
       SupervisorInfo supervisorInfo =
-          new SupervisorInfo(CoreUtil.current_time_secs(),
-              supervisorData.getMyHostname(), supervisorData.getAssignmentId(),
-              workPorts, isupervisor.getMetadata(),
-              (Map) conf.get(Config.SUPERVISOR_SCHEDULER_META), supervisorData
-                  .getUptime().uptime(), conf);
+          new SupervisorInfo(Long.valueOf(CoreUtil.current_time_secs()),
+              supervisorData.getMyHostname());
+      supervisorInfo.set_assignment_id(supervisorData.getAssignmentId());
+      supervisorInfo.set_used_ports(workPorts);
+      supervisorInfo.set_meta((List<Long>) isupervisor.getMetadata());
+      supervisorInfo.set_scheduler_meta((Map<String, String>) conf
+          .get(Config.SUPERVISOR_SCHEDULER_META));
+      supervisorInfo.set_uptime_secs(Long.valueOf(supervisorData.getUptime()
+          .uptime()));
+      supervisorInfo.set_version(supervisorData.getVersion());
       LOG.debug("supervisor heartbeat: {} : {} ", supervisorId,
           supervisorInfo.toString());
       stormClusterState.supervisorHeartbeat(supervisorId, supervisorInfo);

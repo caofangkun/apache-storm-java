@@ -31,7 +31,6 @@ import org.apache.curator.framework.recipes.leader.LeaderSelector;
 import org.apache.curator.framework.recipes.leader.LeaderSelectorListener;
 import org.apache.storm.ClojureClass;
 import org.apache.storm.daemon.common.Assignment;
-import org.apache.storm.daemon.common.SupervisorInfo;
 import org.apache.storm.daemon.worker.executor.heartbeat.ExecutorHeartbeat;
 import org.apache.storm.daemon.worker.heartbeat.WorkerHeartbeats;
 import org.apache.storm.daemon.worker.stats.StatsData;
@@ -47,6 +46,7 @@ import backtype.storm.generated.ErrorInfo;
 import backtype.storm.generated.ExecutorInfo;
 import backtype.storm.generated.NodeInfo;
 import backtype.storm.generated.StormBase;
+import backtype.storm.generated.SupervisorInfo;
 import backtype.storm.scheduler.WorkerSlot;
 import backtype.storm.utils.Utils;
 

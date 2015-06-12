@@ -41,7 +41,6 @@ import org.apache.storm.cluster.StormClusterState;
 import org.apache.storm.config.ConfigUtil;
 import org.apache.storm.daemon.common.Assignment;
 import org.apache.storm.daemon.common.Common;
-import org.apache.storm.daemon.common.SupervisorInfo;
 import org.apache.storm.daemon.nimbus.threads.OlderFileFilter;
 import org.apache.storm.daemon.nimbus.transitions.StatusType;
 import org.apache.storm.daemon.worker.executor.ExecutorCache;
@@ -73,6 +72,7 @@ import backtype.storm.generated.SpoutSpec;
 import backtype.storm.generated.StateSpoutSpec;
 import backtype.storm.generated.StormBase;
 import backtype.storm.generated.StormTopology;
+import backtype.storm.generated.SupervisorInfo;
 import backtype.storm.generated.SupervisorSummary;
 import backtype.storm.generated.TopologyInitialStatus;
 import backtype.storm.generated.TopologyStatus;
@@ -549,11 +549,11 @@ public class NimbusUtils {
   @SuppressWarnings("unchecked")
   public static SupervisorSummary mkSupervisorSummary(
       SupervisorInfo supervisorInfo, String supervisorId) {
-    Set<Integer> ports = (Set<Integer>) supervisorInfo.getMeta();
+    List<Long> ports = (List<Long>) supervisorInfo.get_meta();
     SupervisorSummary summary =
-        new SupervisorSummary(supervisorInfo.getHostName(),
-            supervisorInfo.getUptimeSecs(), ports.size(), supervisorInfo
-                .getUsedPorts().size(), supervisorId);
+        new SupervisorSummary(supervisorInfo.get_hostname(), Long.valueOf(
+            supervisorInfo.get_uptime_secs()).intValue(), ports.size(),
+            supervisorInfo.get_used_ports_size(), supervisorId);
     return summary;
   }
 
@@ -569,15 +569,15 @@ public class NimbusUtils {
       int num_workers = 0;
       // TODO: need to get the port info about supervisors...
       // in standalone just look at metadata, otherwise just say N/A?
-      Set<Integer> ports = (Set<Integer>) supervisorInfo.getMeta();
+      List<Long> ports = (List<Long>) supervisorInfo.get_meta();
 
       if (ports != null) {
         num_workers = ports.size();
       }
       SupervisorSummary summary =
-          new SupervisorSummary(supervisorInfo.getHostName(),
-              supervisorInfo.getUptimeSecs(), num_workers, supervisorInfo
-                  .getUsedPorts().size(), supervisorId);
+          new SupervisorSummary(supervisorInfo.get_hostname(), Long.valueOf(
+              supervisorInfo.get_uptime_secs()).intValue(), num_workers,
+              supervisorInfo.get_used_ports_size(), supervisorId);
       ret.add(summary);
     }
     Collections.sort(ret, new Comparator<SupervisorSummary>() {
@@ -1210,7 +1210,7 @@ public class NimbusUtils {
     for (Entry<String, SupervisorInfo> entry : supervisorInfos.entrySet()) {
       String id = entry.getKey();
       SupervisorInfo info = entry.getValue();
-      supervisorDetails.add(new SupervisorDetails(id, info.getMeta()));
+      supervisorDetails.add(new SupervisorDetails(id, info.get_meta()));
     }
 
     Collection<WorkerSlot> ret =
@@ -1250,7 +1250,7 @@ public class NimbusUtils {
     for (Entry<String, SupervisorInfo> entry : supervisorInfos.entrySet()) {
       String sid = entry.getKey();
       SupervisorInfo supervisorInfo = entry.getValue();
-      String hostname = supervisorInfo.getHostName();
+      String hostname = supervisorInfo.get_hostname();
       Set<Integer> deadPorts = new HashSet<Integer>();
       if (supervisorToDeadPorts.containsKey(sid)) {
         deadPorts = supervisorToDeadPorts.get(sid);
@@ -1269,7 +1269,7 @@ public class NimbusUtils {
       List<Number> allPorts = new ArrayList<Number>();
       allPorts.addAll(allPortSet);
       allSupervisorDetails.put(sid, new SupervisorDetails(sid, hostname,
-          supervisorInfo.getSchedulerMeta(), allPorts));
+          supervisorInfo.get_scheduler_meta(), allPorts));
     }
 
     for (Entry<String, Set<Integer>> entry : nonexistentSupervisorSlots
@@ -1515,9 +1515,10 @@ public class NimbusUtils {
     for (Entry<String, SupervisorInfo> entry : infos.entrySet()) {
       String id = entry.getKey();
       SupervisorInfo info = entry.getValue();
-      ret.put(id,
-          new SupervisorDetails(id, info.getHostName(),
-              info.getSchedulerMeta(), null));
+      ret.put(
+          id,
+          new SupervisorDetails(id, info.get_hostname(), info
+              .get_scheduler_meta(), null));
     }
     return ret;
   }

@@ -84,7 +84,7 @@ public class VersionInfo {
         + " source checksum " + _getSrcChecksum();
   }
 
-  private static VersionInfo COMMON_VERSION_INFO = new VersionInfo("core");
+  private static VersionInfo COMMON_VERSION_INFO = new VersionInfo("java-core");
 
   public static String getVersion() {
     return COMMON_VERSION_INFO._getVersion();

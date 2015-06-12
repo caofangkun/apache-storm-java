@@ -31,6 +31,7 @@ import org.apache.storm.config.ConfigUtil;
 import org.apache.storm.daemon.common.Assignment;
 import org.apache.storm.daemon.worker.executor.UptimeComputer;
 import org.apache.storm.util.CoreUtil;
+import org.apache.storm.version.VersionInfo;
 
 import backtype.storm.Config;
 import backtype.storm.generated.LocalAssignment;
@@ -48,6 +49,7 @@ public class SupervisorData implements Serializable {
   private ISupervisor isupervisor;
   private AtomicBoolean active;
   private UptimeComputer uptime;
+  private String version;
   private ConcurrentHashMap<String, String> workerThreadPids;
   private StormClusterState stormClusterState;
   private LocalState localState;
@@ -67,6 +69,7 @@ public class SupervisorData implements Serializable {
     this.isupervisor = isupervisor;
     this.active = new AtomicBoolean(true);
     this.uptime = new UptimeComputer();
+    this.version = VersionInfo.getVersion();
     this.workerThreadPids = new ConcurrentHashMap<String, String>();
     this.stormClusterState = new StormZkClusterState(conf);
     NodeInfo serverInfo = stormClusterState.getLeaderHost();
@@ -146,6 +149,14 @@ public class SupervisorData implements Serializable {
 
   public void setUptime(UptimeComputer uptime) {
     this.uptime = uptime;
+  }
+
+  public String getVersion() {
+    return version;
+  }
+
+  public void setVersion(String version) {
+    this.version = version;
   }
 
   public void setStormClusterState(StormClusterState stormClusterState) {
