@@ -20,7 +20,6 @@ package org.apache.storm.daemon.nimbus;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
@@ -49,7 +48,6 @@ import org.apache.storm.daemon.worker.stats.Stats;
 import org.apache.storm.daemon.worker.stats.StatsData;
 import org.apache.storm.util.CoreConfig;
 import org.apache.storm.util.CoreUtil;
-import org.apache.storm.util.NetWorkUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,7 +81,6 @@ import backtype.storm.generated.TopologySummary;
 import backtype.storm.scheduler.INimbus;
 import backtype.storm.scheduler.WorkerSlot;
 import backtype.storm.utils.BufferFileInputStream;
-import backtype.storm.utils.Utils;
 
 @ClojureClass(className = "backtype.storm.daemon.nimbus#service-handler")
 public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
