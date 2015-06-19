@@ -47,6 +47,7 @@ import org.apache.storm.daemon.nimbus.transitions.StatusType;
 import org.apache.storm.daemon.worker.executor.ExecutorCache;
 import org.apache.storm.daemon.worker.stats.Stats;
 import org.apache.storm.daemon.worker.stats.StatsData;
+import org.apache.storm.util.CoreConfig;
 import org.apache.storm.util.CoreUtil;
 import org.apache.storm.util.NetWorkUtils;
 import org.slf4j.Logger;
@@ -82,6 +83,7 @@ import backtype.storm.generated.TopologySummary;
 import backtype.storm.scheduler.INimbus;
 import backtype.storm.scheduler.WorkerSlot;
 import backtype.storm.utils.BufferFileInputStream;
+import backtype.storm.utils.Utils;
 
 @ClojureClass(className = "backtype.storm.daemon.nimbus#service-handler")
 public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
@@ -622,17 +624,22 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
   private void registerLeaderHost(Map conf) throws Exception,
       UnknownHostException, IOException {
     // set nimbus host and port
-    String host = InetAddress.getLocalHost().getHostName().toString();
-    Long port = CoreUtil.parseLong(conf.get(Config.NIMBUS_THRIFT_PORT), -1);
-    port = Long.valueOf(NetWorkUtils.assignServerPort(port.intValue()));
-    conf.put(Config.NIMBUS_HOST, host);
-    conf.put(Config.NIMBUS_THRIFT_PORT, port);
-
+    String nimbusHost = CoreUtil.hostname(conf);
+    Long nimbusThriftPort =
+        CoreUtil.parseLong(conf.get(Config.NIMBUS_THRIFT_PORT), 7627);
+    Map<Integer, Integer> virualToRealPort =
+        (Map<Integer, Integer>) conf.get(CoreConfig.STORM_VIRTUAL_REAL_PORTS);
+    if (virualToRealPort.containsKey(nimbusThriftPort)) {
+      nimbusThriftPort = Long.valueOf(virualToRealPort.get(nimbusThriftPort));
+    }
+    conf.put(Config.NIMBUS_HOST, nimbusHost);
+    conf.put(Config.NIMBUS_THRIFT_PORT, nimbusThriftPort);
     // write to zk
     Set<Long> ports = new HashSet<Long>();
-    ports.add(port);
-    nimbus.getStormClusterState().registerLeaderHost(new NodeInfo(host, ports));
-    LOG.info("{}:{} register successfully!", host, port);
+    ports.add(nimbusThriftPort);
+    nimbus.getStormClusterState().registerLeaderHost(
+        new NodeInfo(nimbusHost, ports));
+    LOG.info("{}:{} register successfully!", nimbusHost, nimbusThriftPort);
   }
 
   private void initTopologyStatus() throws Exception {

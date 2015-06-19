@@ -31,6 +31,7 @@ import org.apache.storm.cluster.StormClusterState;
 import org.apache.storm.daemon.common.Assignment;
 import org.apache.storm.daemon.common.Common;
 import org.apache.storm.timer.Timer;
+import org.apache.storm.util.CoreConfig;
 import org.apache.storm.util.CoreUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -152,11 +153,16 @@ public class WorkerUtils {
     return true;
   }
 
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   @ClojureClass(className = "backtype.storm.daemon.worker#read-worker-executors")
   public static Set<ExecutorInfo> readWorkerExecutors(Map stormConf,
       StormClusterState stormClusterState, String stormId, String assignmentId,
       int port) throws Exception {
+    Map<Integer, Integer> virtualToRealPort =
+        (Map<Integer, Integer>) stormConf.get(CoreConfig.STORM_VIRTUAL_REAL_PORTS);
+    if (virtualToRealPort.containsKey(port)) {
+      port = virtualToRealPort.get(port);
+    }
     LOG.info("Reading Assignments.");
     Assignment assignment = stormClusterState.assignmentInfo(stormId, null);
     if (assignment == null) {

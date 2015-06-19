@@ -21,12 +21,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.storm.ClojureClass;
 import org.apache.storm.config.ConfigUtil;
-import org.apache.storm.daemon.common.Common;
 import org.apache.storm.daemon.worker.WorkerData;
 import org.apache.storm.localstate.LocalStateUtil;
 import org.apache.storm.util.CoreUtil;
@@ -53,9 +51,9 @@ public class WorkerLocalHeartbeatRunable extends RunnableCallback {
   private List<ExecutorInfo> executors;
   private String processId;
   private int frequence;
-  private MutableLong retryCount;
-  private Exception exception = null;
+  private Map<Integer, Integer> virtualToRealPort;
 
+  @SuppressWarnings("unchecked")
   public WorkerLocalHeartbeatRunable(WorkerData workerData) {
 
     this.workerData = workerData;
@@ -70,8 +68,11 @@ public class WorkerLocalHeartbeatRunable extends RunnableCallback {
     this.frequence =
         CoreUtil.parseInt(conf.get(Config.WORKER_HEARTBEAT_FREQUENCY_SECS),
             10);
-    this.retryCount = new MutableLong(0);
-  }
+    this.virtualToRealPort =
+        (Map<Integer, Integer>) conf.get("storm.virtual.real.ports");
+    if (virtualToRealPort.containsKey(port)) {
+      this.port = virtualToRealPort.get(port);
+    }  }
 
   @ClojureClass(className = "backtype.storm.daemon.worker#do-heartbeat")
   public void doHeartbeat() throws IOException {
@@ -94,24 +95,14 @@ public class WorkerLocalHeartbeatRunable extends RunnableCallback {
   public void run() {
     try {
       doHeartbeat();
-      retryCount = new MutableLong(0);
     } catch (IOException e) {
       LOG.error("Failed doing Worker HeartBeat ", CoreUtil.stringifyError(e));
-      retryCount.increment();
-      if (retryCount.get() >= 3) {
-        exception = new RuntimeException(e);
-      }
     }
-
   }
 
   @Override
   public Exception error() {
-    if (null != exception) {
-      LOG.error("Worker Local Heartbeat exception: {}",
-          CoreUtil.stringifyError(exception));
-    }
-    return exception;
+    return null;
   }
 
   @Override

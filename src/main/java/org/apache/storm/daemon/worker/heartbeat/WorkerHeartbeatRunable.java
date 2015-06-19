@@ -28,6 +28,7 @@ import org.apache.storm.daemon.worker.WorkerData;
 import org.apache.storm.daemon.worker.executor.ExecutorShutdown;
 import org.apache.storm.daemon.worker.executor.UptimeComputer;
 import org.apache.storm.daemon.worker.stats.StatsData;
+import org.apache.storm.util.CoreConfig;
 import org.apache.storm.util.CoreUtil;
 import org.apache.storm.util.thread.RunnableCallback;
 import org.slf4j.Logger;
@@ -54,7 +55,9 @@ public class WorkerHeartbeatRunable extends RunnableCallback {
   private String node;
   private int port;
   private WorkerData workerData;
+  private Map<Integer, Integer> virtualToRealPort;
 
+  @SuppressWarnings("unchecked")
   public WorkerHeartbeatRunable(WorkerData workerData) {
     this.workerData = workerData;
     this.stormClusterState = workerData.getStormClusterState();
@@ -62,6 +65,11 @@ public class WorkerHeartbeatRunable extends RunnableCallback {
     this.node = workerData.getAssignmentId();
     this.port = workerData.getPort();
     this.stormConf = workerData.getStormConf();
+    this.virtualToRealPort =
+        (Map<Integer, Integer>) stormConf.get(CoreConfig.STORM_VIRTUAL_REAL_PORTS);
+    if (virtualToRealPort.containsKey(port)) {
+      this.port = virtualToRealPort.get(port);
+    }
     this.frequence =
         CoreUtil.parseInt(stormConf.get(Config.TASK_HEARTBEAT_FREQUENCY_SECS),
             3);

@@ -38,6 +38,7 @@ import org.apache.storm.daemon.supervisor.SupervisorUtils;
 import org.apache.storm.daemon.worker.WorkerStatus;
 import org.apache.storm.daemon.worker.heartbeat.WorkerLocalHeartbeat;
 import org.apache.storm.localstate.LocalStateUtil;
+import org.apache.storm.util.CoreConfig;
 import org.apache.storm.util.CoreUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,6 +83,8 @@ public class SyncProcessesEvent extends ShutdownWork {
   private MutableLong retryCount;
   private Object downloadLock;
   private StormClusterState stormClusterState;
+  private Map<Integer, Integer> realToVirtualPort;
+
 
   public SyncProcessesEvent(SupervisorData supervisorData) throws Exception {
     this.supervisorData = supervisorData;
@@ -89,6 +92,8 @@ public class SyncProcessesEvent extends ShutdownWork {
     this.retryCount = new MutableLong(0);
     this.downloadLock = supervisorData.getDownloadLock();
     this.stormClusterState = supervisorData.getStormClusterState();
+    this.realToVirtualPort =
+        (Map<Integer, Integer>) conf.get(CoreConfig.STORM_REAL_VIRTUAL_PORTS);
   }
 
   @SuppressWarnings("unchecked")
@@ -267,16 +272,21 @@ public class SyncProcessesEvent extends ShutdownWork {
     downloadCodeIfNotExisted(reassignExecutors);
     for (Map.Entry<Integer, LocalAssignment> entry : reassignExecutors
         .entrySet()) {
-      int port = entry.getKey();
+      int realPort = entry.getKey();
+      int virtualPort = realPort;
+      if (realToVirtualPort.containsKey(realPort)) {
+        virtualPort = realToVirtualPort.get(realPort);
+        LOG.info("RealPort-->VirtualPort: " + realPort + ":" + virtualPort);
+      }
       LocalAssignment assignment = entry.getValue();
-      String id = newWorkerIds.get(port);// workerid
+      String id = newWorkerIds.get(realPort);// workerid
       Object objs[] =
-          { assignment.toString(), supervisorData.getSupervisorId(), port, id };
+          { assignment.toString(), supervisorData.getSupervisorId(), realPort, id };
       LOG.info(
           "Launching worker with assignment {} for this supervisor {} on port {} with id {}",
           objs);
       SupervisorUtils.launchWorker(conf, supervisorData,
-          assignment.get_topology_id(), port, id);
+          assignment.get_topology_id(), realPort, id);
     }
 
     try {

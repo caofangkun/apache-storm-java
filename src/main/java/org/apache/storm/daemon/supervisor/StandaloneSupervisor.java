@@ -26,6 +26,7 @@ import java.util.Set;
 
 import org.apache.storm.ClojureClass;
 import org.apache.storm.daemon.common.Common;
+import org.apache.storm.util.CoreConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,18 +44,21 @@ public class StandaloneSupervisor implements ISupervisor {
   private clojure.lang.Atom confAtom;
   private clojure.lang.Atom idAtom;
   private LocalState localState;
+  private Map<Integer, Integer> virtualPortToPort;
 
   public StandaloneSupervisor() {
     this.confAtom = new Atom(null);
     this.idAtom = new Atom(null);
   }
 
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   @Override
   public void prepare(Map conf, String localDir) {
     try {
       confAtom.reset(conf);
       localState = new LocalState(localDir);
+      virtualPortToPort =
+          (Map<Integer, Integer>) conf.get(CoreConfig.STORM_VIRTUAL_REAL_PORTS);
       LSSupervisorId lsSupervisorId =
           (LSSupervisorId) localState.get(Common.LS_ID);
       String currId = lsSupervisorId.get_supervisor_id();
@@ -87,7 +91,13 @@ public class StandaloneSupervisor implements ISupervisor {
     List<Integer> portList =
         (List<Integer>) conf.get(Config.SUPERVISOR_SLOTS_PORTS);
     for (Integer svPort : portList) {
-      ports.add(svPort);
+      if (virtualPortToPort.containsKey(svPort)) {
+        ports.add(virtualPortToPort.get(svPort));
+        LOG.info("Use {} ---> {}", svPort, virtualPortToPort.get(svPort));
+      } else {
+        ports.add(svPort);
+        LOG.info("Keep {}", svPort);
+      }
     }
     return ports;
   }

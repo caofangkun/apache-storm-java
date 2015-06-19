@@ -42,6 +42,7 @@ import org.apache.storm.daemon.worker.WorkerShutdown;
 import org.apache.storm.daemon.worker.WorkerStatus;
 import org.apache.storm.daemon.worker.heartbeat.WorkerLocalHeartbeat;
 import org.apache.storm.thrift.TException;
+import org.apache.storm.util.CoreConfig;
 import org.apache.storm.util.CoreUtil;
 import org.apache.storm.util.thread.RunnableCallback;
 import org.slf4j.Logger;
@@ -492,7 +493,13 @@ public class SupervisorUtils {
     String user =
         CoreUtil.parseString(stormConf.get(Config.TOPOLOGY_SUBMITTER_USER), "");
 
-    String logfilename = "worker-" + port + ".log";
+    Map<Integer, Integer> virtualToRealPort =
+        (Map<Integer, Integer>) conf.get(CoreConfig.STORM_VIRTUAL_REAL_PORTS);
+    Integer realPort = port;
+    if (virtualToRealPort.containsKey(port)) {
+      realPort = virtualToRealPort.get(port);
+    }
+    String logfilename = "worker-" + port + "-" + realPort + ".log";
 
     String stormConfDir = System.getProperty("storm.conf.dir");
 
