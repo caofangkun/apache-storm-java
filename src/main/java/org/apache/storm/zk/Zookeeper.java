@@ -106,7 +106,9 @@ public class Zookeeper {
     String result = null;
     try {
       String npath = CoreUtil.normalizePath(path);
-      result = zk.create().withMode(mode).withACL(acls).forPath(npath, data);
+      result =
+          zk.create().creatingParentsIfNeeded().withMode(mode).withACL(acls)
+              .forPath(npath, data);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -144,7 +146,8 @@ public class Zookeeper {
   public void deleteNode(CuratorFramework zk, String path, boolean isForce)
       throws RuntimeException {
     try {
-      zk.delete().forPath(CoreUtil.normalizePath(path));
+      zk.delete().deletingChildrenIfNeeded()
+          .forPath(CoreUtil.normalizePath(path));
     } catch (KeeperException.NoNodeException e) {
       if (!isForce) {
         throw new RuntimeException(e);
