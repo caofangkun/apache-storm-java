@@ -28,10 +28,9 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.storm.ClojureClass;
+import org.apache.storm.config.ConfigUtil;
 import org.apache.storm.daemon.worker.executor.grouping.GroupingType;
-import org.apache.storm.thrift.protocol.TBinaryProtocol;
-import org.apache.storm.thrift.transport.TFramedTransport;
-import org.apache.storm.thrift.transport.TSocket;
+import org.apache.storm.thrift.transport.TTransport;
 import org.apache.storm.thrift.transport.TTransportException;
 import org.apache.storm.util.CoreUtil;
 import org.slf4j.Logger;
@@ -61,6 +60,7 @@ import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.IRichSpout;
 import backtype.storm.topology.SpoutDeclarer;
 import backtype.storm.topology.TopologyBuilder;
+import backtype.storm.utils.NimbusClient;
 import backtype.storm.utils.Utils;
 
 @ClojureClass(className = "backtype.storm.thrift")
@@ -126,8 +126,7 @@ public class Thrift {
 
   @ClojureClass(className = "backtype.storm.thrift#grouping-type")
   public static GroupingType groupingType(Grouping grouping) {
-    Grouping._Fields fields = grouping.getSetField();
-    return groupingConstants.get(fields);
+    return groupingConstants.get(grouping.getSetField());
   }
 
   @ClojureClass(className = "backtype.storm.thrift#field-grouping")
@@ -159,11 +158,20 @@ public class Thrift {
   @ClojureClass(className = "backtype.storm.thrift#nimbus-client-and-conn")
   public static Object[] nimbusClientAndConn(String host, Integer port)
       throws TTransportException {
-    LOG.info("Connecting to Nimbus at " + host + ":" + port);
-    TFramedTransport transport = new TFramedTransport(new TSocket(host, port));
-    TBinaryProtocol prot = new TBinaryProtocol(transport);
-    Nimbus.Client client = new Nimbus.Client(prot);
-    transport.open();
+    return nimbusClientAndConn(host, port, null);
+  }
+
+  @SuppressWarnings({ "rawtypes" })
+  @ClojureClass(className = "backtype.storm.thrift#nimbus-client-and-conn")
+  public static Object[] nimbusClientAndConn(String host, Integer port,
+      String asUser) throws TTransportException {
+    LOG.info("Connecting to Nimbus at " + host + ":" + port + " as user: "
+        + asUser);
+    Map conf = ConfigUtil.readStormConfig();
+    NimbusClient nimbusClient =
+        new NimbusClient(conf, host, port, null, asUser);
+    Nimbus.Client client = nimbusClient.getClient();
+    TTransport transport = nimbusClient.transport();
     Object[] rtn = { client, transport };
     return rtn;
   }
