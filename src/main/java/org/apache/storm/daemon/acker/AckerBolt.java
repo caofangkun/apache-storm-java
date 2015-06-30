@@ -77,10 +77,13 @@ public class AckerBolt implements IBolt {
       OutputCollector outputCollector =
           (OutputCollector) outputCollectorObject.getObject();
       AckObject curr = pending.get(id);
+      if (curr == null) {
+        curr = new AckObject();
+      }
 
       if (streamId.equals(AckerBolt.ACKER_INIT_STREAM_ID)) {
         curr.updateAck(tuple.getValue(1));
-        curr.spout_task = tuple.getInteger(2);
+        curr.spout_task = (Integer) tuple.getValue(2);
       } else if (streamId.equals(AckerBolt.ACKER_ACK_STREAM_ID)) {
         curr.updateAck(tuple.getValue(1));
       } else if (streamId.equals(AckerBolt.ACKER_FAIL_STREAM_ID)) {
@@ -89,7 +92,7 @@ public class AckerBolt implements IBolt {
 
       pending.put(id, curr);
 
-      if (curr != null && curr.spout_task != null) {
+      if (curr.spout_task != null) {
         if (curr.val == 0) {
           pending.remove(id);
           ackerEmitDirect(outputCollector, curr.spout_task,
