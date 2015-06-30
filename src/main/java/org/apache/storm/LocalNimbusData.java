@@ -29,6 +29,7 @@ import backtype.storm.scheduler.INimbus;
  * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
  * 
  */
+@ClojureClass(className = "backtype.storm.daemon.nimbus#nimbus-data")
 public class LocalNimbusData extends NimbusData {
 
   private static final long serialVersionUID = 1L;

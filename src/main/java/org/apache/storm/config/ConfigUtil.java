@@ -47,6 +47,7 @@ import backtype.storm.utils.Utils;
  * @author <a href="mailto:xunzhang555@gmail.com">zhangxun</a>
  * 
  */
+@ClojureClass(className = "backtype.storm.config")
 public class ConfigUtil {
   private final static Logger LOG = LoggerFactory.getLogger(ConfigUtil.class);
   public final static String RESOURCES_SUBDIR = "resources";

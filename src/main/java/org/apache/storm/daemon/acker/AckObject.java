@@ -31,7 +31,6 @@ public class AckObject {
   public Integer spout_task = null;
   public boolean failed = false;
 
-  // val xor value
   @ClojureClass(className = "backtype.storm.daemon.acker#update-ack")
   public void updateAck(Object value) {
     synchronized (this) {

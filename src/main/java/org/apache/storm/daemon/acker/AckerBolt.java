@@ -17,15 +17,14 @@
  */
 package org.apache.storm.daemon.acker;
 
+import java.util.List;
 import java.util.Map;
 
 import org.apache.storm.ClojureClass;
 import org.apache.storm.guava.collect.Lists;
-import org.apache.storm.util.CoreUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.Config;
 import backtype.storm.Constants;
 import backtype.storm.task.IBolt;
 import backtype.storm.task.OutputCollector;
@@ -52,8 +51,6 @@ public class AckerBolt implements IBolt {
 
   public static final int TIMEOUT_BUCKET_NUM = 2;
 
-  private long lastRotate = System.currentTimeMillis();
-  private long rotateTime;
   private MutableObject outputCollectorObject = new MutableObject();
   private MutableObject pendingObject = new MutableObject();
 
@@ -64,9 +61,6 @@ public class AckerBolt implements IBolt {
     outputCollectorObject.setObject(collector);
     pendingObject.setObject(new RotatingMap<Object, AckObject>(
         TIMEOUT_BUCKET_NUM));
-    this.rotateTime =
-        1000L * CoreUtil.parseInt(
-            stormConf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS), 30);
   }
 
   @SuppressWarnings("unchecked")
@@ -85,33 +79,11 @@ public class AckerBolt implements IBolt {
       AckObject curr = pending.get(id);
 
       if (streamId.equals(AckerBolt.ACKER_INIT_STREAM_ID)) {
-        if (curr == null) {
-          curr = new AckObject();
-          curr.val = tuple.getLong(1);
-          curr.spout_task = tuple.getInteger(2);
-          pending.put(id, curr);
-        } else {
-          // bolt's ack first come
-          curr.updateAck(tuple.getValue(1));
-          curr.spout_task = tuple.getInteger(2);
-        }
+        curr.updateAck(tuple.getValue(1));
+        curr.spout_task = tuple.getInteger(2);
       } else if (streamId.equals(AckerBolt.ACKER_ACK_STREAM_ID)) {
-        if (curr != null) {
-          curr.updateAck(tuple.getValue(1));
-        } else {
-          // two case
-          // one is timeout
-          // the other is bolt's ack first come
-          curr = new AckObject();
-          curr.val = tuple.getLong(1);
-          pending.put(id, curr);
-        }
+        curr.updateAck(tuple.getValue(1));
       } else if (streamId.equals(AckerBolt.ACKER_FAIL_STREAM_ID)) {
-        if (curr == null) {
-          // do nothing
-          // already timeout, should go fail
-          return;
-        }
         curr.failed = true;
       }
 
@@ -120,27 +92,26 @@ public class AckerBolt implements IBolt {
       if (curr != null && curr.spout_task != null) {
         if (curr.val == 0) {
           pending.remove(id);
-          outputCollector.emitDirect(curr.spout_task, ACKER_ACK_STREAM_ID,
-              Lists.newArrayList(id));
+          ackerEmitDirect(outputCollector, curr.spout_task,
+              ACKER_ACK_STREAM_ID, Lists.newArrayList(id));
         } else if (curr.failed) {
           pending.remove(id);
-          outputCollector.emitDirect(curr.spout_task, ACKER_FAIL_STREAM_ID,
-              Lists.newArrayList(id));
+          ackerEmitDirect(outputCollector, curr.spout_task,
+              ACKER_FAIL_STREAM_ID, Lists.newArrayList(id));
         }
       }
       outputCollector.ack(tuple);
-    }
-
-    long now = System.currentTimeMillis();
-    if (now - lastRotate > rotateTime) {
-      lastRotate = now;
-      Map<Object, AckObject> tmp = pending.rotate();
-      LOG.info("Acker's timeout item size:{}", tmp.size());
     }
   }
 
   @Override
   public void cleanup() {
-    LOG.info("Successfully cleanup");
+    LOG.info("Acker successfully cleanup");
+  }
+
+  @ClojureClass(className = "backtype.storm.daemon.acker#acker-emit-direct")
+  private void ackerEmitDirect(OutputCollector collector, Integer task,
+      String stream, List<Object> values) {
+    collector.emitDirect(task, stream, values);
   }
 }
