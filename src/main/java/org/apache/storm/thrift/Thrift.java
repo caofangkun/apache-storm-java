@@ -210,6 +210,21 @@ public class Thrift {
   }
 
   @SuppressWarnings("rawtypes")
+  @ClojureClass(className = "backtype.storm.thrift#mk-plain-component-common")
+  public static ComponentCommon mkPlainComponentCommon(
+      Map<GlobalStreamId, Grouping> inputs,
+      Map<String, StreamInfo> output_spec, Integer parallelism_hint, Map conf) {
+    ComponentCommon ret = new ComponentCommon(inputs, output_spec);
+    if (parallelism_hint != null) {
+      ret.set_parallelism_hint(parallelism_hint);
+    }
+    if (conf != null) {
+      ret.set_json_conf(CoreUtil.to_json(conf));
+    }
+    return ret;
+  }
+
+  @SuppressWarnings("rawtypes")
   @ClojureClass(className = "backtype.storm.thrift#mk-spout-spec*")
   public static SpoutSpec mkSpoutSpec(ISpout spout,
       Map<String, StreamInfo> outputs, Integer parallelism_hint, Map conf) {
@@ -278,21 +293,6 @@ public class Thrift {
   @ClojureClass(className = "backtype.storm.thrift#serialize-component-object")
   public static ComponentObject serializeComponentObject(Object obj) {
     return ComponentObject.serialized_java(Utils.serialize(obj));
-  }
-
-  @SuppressWarnings("rawtypes")
-  @ClojureClass(className = "backtype.storm.thrift#mk-plain-component-common")
-  public static ComponentCommon mkPlainComponentCommon(
-      Map<GlobalStreamId, Grouping> inputs,
-      Map<String, StreamInfo> output_spec, Integer parallelism_hint, Map conf) {
-    ComponentCommon ret = new ComponentCommon(inputs, output_spec);
-    if (parallelism_hint != null) {
-      ret.set_parallelism_hint(parallelism_hint);
-    }
-    if (conf != null) {
-      ret.set_json_conf(CoreUtil.to_json(conf));
-    }
-    return ret;
   }
 
   @SuppressWarnings("rawtypes")
@@ -396,18 +396,18 @@ public class Thrift {
           new HashMap<GlobalStreamId, Grouping>(inputs.size());
       for (Map.Entry<Object, Object> entry : inputs.entrySet()) {
         Object streamId = entry.getKey();
-        GlobalStreamId tmpStream = null;
+        GlobalStreamId globalStreamId = null;
         if (streamId instanceof List && ((List<String>) streamId).size() > 2) {
           ((List<String>) streamId).get(0);
-          tmpStream =
+          globalStreamId =
               new GlobalStreamId(((List<String>) streamId).get(0),
                   ((List<String>) streamId).get(1));
         } else {
-          tmpStream =
+          globalStreamId =
               new GlobalStreamId((String) streamId, Utils.DEFAULT_STREAM_ID);
         }
 
-        result.put(tmpStream, mkGrouping(entry.getValue()));
+        result.put(globalStreamId, mkGrouping(entry.getValue()));
       }
       return result;
     }
@@ -467,11 +467,6 @@ public class Thrift {
           + " is not a valid grouping");
     }
   }
-
-  public static Set<_Fields> STORM_TOPOLOGY_FIELDS = StormTopology.metaDataMap
-      .keySet();
-  public static StormTopology._Fields[] SPOUT_FIELDS = {
-      StormTopology._Fields.SPOUTS, StormTopology._Fields.STATE_SPOUTS };
 
   @SuppressWarnings("rawtypes")
   class InternalBaseComponent {
@@ -555,4 +550,10 @@ public class Thrift {
   public enum InternalGroupingType {
     SHUFFLE, LOCAL_OR_SHUFFLE, NONE, ALL, GLOBAL, DIRECT;
   }
+
+  public static Set<_Fields> STORM_TOPOLOGY_FIELDS = StormTopology.metaDataMap
+      .keySet();
+
+  public static StormTopology._Fields[] SPOUT_FIELDS = {
+      StormTopology._Fields.SPOUTS, StormTopology._Fields.STATE_SPOUTS };
 }
