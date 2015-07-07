@@ -5,8 +5,8 @@
 	<groupId>com.github.caofangkun</groupId>
 	<artifactId>storm-core-java</artifactId>
 	<version>0.11.0-SNAPSHOT</version>
-	<packaging>jar</packaging>
 	<name>storm-core-java</name>
+	<description>Java Implemention of Apache Storm Clojure Core</description>
 	<url>https://github.com/caofangkun/storm-core-java</url>
 
 	<licenses>
@@ -23,6 +23,14 @@
 			<email>caofangkun@gmail.com</email>
 		</developer>
 	</developers>
+
+	<scm>
+		<connection>scm:git:https://github.com/caofangkun/storm-core-java</connection>
+		<developerConnection>scm:git:https://github.com/caofangkun/storm-core-java</developerConnection>
+		<url>https://github.com/caofangkun/storm-core-java</url>
+		<tag>HEAD</tag>
+	</scm>
+
 
 	<repositories>
 		<repository>
@@ -85,12 +93,12 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<storm.version>0.11.0-SNAPSHOT</storm.version>
+		<storm.version>0.11.0</storm.version>
 		<curator.version>2.5.0</curator.version>
 		<args4j.version>2.0.16</args4j.version>
-                <mockito.version>1.9.5</mockito.version>
-                <junit.version>4.10</junit.version>
-                <commons-collections.version>3.2.1</commons-collections.version>
+		<mockito.version>1.9.5</mockito.version>
+		<junit.version>4.10</junit.version>
+		<commons-collections.version>3.2.1</commons-collections.version>
 	</properties>
 
 	<dependencies>
@@ -178,23 +186,23 @@
 			<version>3.0.0</version>
 			<optional>true</optional><!-- needed only for annotations -->
 		</dependency>
-                <dependency>
-                        <groupId>org.mockito</groupId>
-                        <artifactId>mockito-all</artifactId>
-                        <version>${mockito.version}</version>
-                        <scope>test</scope>
-                </dependency>
-               <dependency>
-                        <groupId>junit</groupId>
-                        <artifactId>junit</artifactId>
-                        <version>${junit.version}</version>
-                        <scope>test</scope>
-                </dependency>
-                <dependency>
-                        <groupId>commons-collections</groupId>
-                        <artifactId>commons-collections</artifactId>
-                        <version>${commons-collections.version}</version>
-                </dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-all</artifactId>
+			<version>${mockito.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>${junit.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>commons-collections</groupId>
+			<artifactId>commons-collections</artifactId>
+			<version>${commons-collections.version}</version>
+		</dependency>
 	</dependencies>
 	<build>
 		<resources>
@@ -229,7 +237,84 @@
 						</execution>
 					</executions>
 				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-release-plugin</artifactId>
+					<version>2.5</version>
+					<configuration>
+						<autoVersionSubmodules>true</autoVersionSubmodules>
+						<useReleaseProfile>false</useReleaseProfile>
+						<releaseProfiles>release</releaseProfiles>
+						<goals>deploy</goals>
+					</configuration>
+				</plugin>
+
 			</plugins>
 		</pluginManagement>
 	</build>
+	<profiles>
+		<profile>
+			<id>release</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<version>1.5</version>
+						<executions>
+							<execution>
+								<id>sign-artifacts</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>sign</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-source-plugin</artifactId>
+						<version>2.2.1</version>
+						<executions>
+							<execution>
+								<id>attach-sources</id>
+								<goals>
+									<goal>jar-no-fork</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-javadoc-plugin</artifactId>
+						<version>2.9.1</version>
+						<executions>
+							<execution>
+								<id>attach-javadocs</id>
+								<goals>
+									<goal>jar</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<version>1.5</version>
+						<executions>
+							<execution>
+								<id>sign-artifacts</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>sign</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 </project>
