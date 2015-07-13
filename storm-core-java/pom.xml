@@ -1,99 +1,15 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-
-	<groupId>com.github.caofangkun</groupId>
-	<artifactId>apache-storm-java</artifactId>
-	<version>0.11.0-SNAPSHOT</version>
-	<name>apache-storm-java</name>
-        <packaging>pom</packaging>
-	<description> Apache Storm With Java Core</description>
-	<url>https://github.com/caofangkun/apache-storm-java</url>
-
-	<licenses>
-		<license>
-			<name>The Apache Software License, Version 2.0</name>
-			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-		</license>
-	</licenses>
-
-	<developers>
-		<developer>
-			<id>caofangkun</id>
-			<name>Kun Cao</name>
-			<email>caofangkun@gmail.com</email>
-		</developer>
-	</developers>
-
-	<scm>
-		<connection>scm:git:https://github.com/caofangkun/apache-storm-java</connection>
-		<developerConnection>scm:git:https://github.com/caofangkun/apache-storm-java</developerConnection>
-		<url>https://github.com/caofangkun/apache-storm-java</url>
-		<tag>HEAD</tag>
-	</scm>
-
-        <modules>
-                <module>storm-core-java</module>
-        </modules>
-
-	<repositories>
-		<repository>
-			<id>oss-snapshots</id>
-			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-			<layout>default</layout>
-		</repository>
-		<repository>
-			<releases>
-				<enabled>true</enabled>
-			</releases>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-			<id>central</id>
-			<url>http://repo1.maven.org/maven2/</url>
-		</repository>
-		<repository>
-			<releases>
-				<enabled>true</enabled>
-			</releases>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-			<id>clojars</id>
-			<url>https://clojars.org/repo/</url>
-		</repository>
-
-	</repositories>
-
-	<pluginRepositories>
-		<pluginRepository>
-			<id>oss-snapshots</id>
-			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-		</pluginRepository>
-	</pluginRepositories>
-
-	<distributionManagement>
-		<snapshotRepository>
-			<id>ossrh</id>
-			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
-		</snapshotRepository>
-		<repository>
-			<id>ossrh</id>
-			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-		</repository>
-	</distributionManagement>
+        <parent>
+                <groupId>com.github.caofangkun</groupId>
+                <artifactId>apache-storm-java</artifactId>
+                <version>0.11.0-SNAPSHOT</version>
+                <relativePath>..</relativePath>
+        </parent>
+	<artifactId>storm-core-java</artifactId>
+	<name>storm-core-java</name>
+	<description>Java Implemention of Apache Storm Clojure Core</description>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
