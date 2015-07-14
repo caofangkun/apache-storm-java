@@ -32,7 +32,7 @@ if [ ! -x ${STORM_RELEASES}/jstorm-${STORM_VERSION} ];
 fi 
 
 mkdir -p ${STORM_RELEASES}/jstorm-${STORM_VERSION}
-unzip  jstorm-${STORM_VERSION}.zip -d ${STORM_RELEASES}/
+unzip  storm-${STORM_VERSION}.zip -d ${STORM_RELEASES}/
 
 if [ -d ${STORM_HOME} ]; then 
    rm -rf  "${STORM_HOME}"
@@ -46,7 +46,7 @@ if [ ! -x "$STORM_CONF_DIR" ]; then
    echo "!!! Please Modify ${STORM_CONF_DIR} " 
 fi
 
-ln -s ${bin}/jstorm-${STORM_VERSION}.zip ${STORM_HOME}/storm.zip
+ln -s ${bin}/storm-${STORM_VERSION}.zip ${STORM_HOME}/storm.zip
 
 echo "export STORM_HOME=${STORM_HOME}" >> ${STORM_BIN_DIR}/storm-env.sh
 echo "export STORM_CONF_DIR=${STORM_CONF_DIR} " >> ${STORM_BIN_DIR}/storm-env.sh

@@ -3,7 +3,7 @@ bin=`dirname "$0"`
 bin=`cd "$bin"; pwd`
 
 function print_usage {
-    echo "Deploy JStorm UI War To Tomcat"
+    echo "Deploy Storm UI War To Tomcat"
     echo "Uage: "
     echo " ./deploy_to_tomcat.sh"
 }
