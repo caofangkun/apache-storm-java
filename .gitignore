@@ -1,4 +1,6 @@
-/target/
+target/
+storm-core-java/target
+storm-dist/binary/target/
 .classpath
 .project
-/.settings/
+.settings/
